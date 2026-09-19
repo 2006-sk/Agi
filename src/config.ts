@@ -17,7 +17,7 @@ const numberFromEnv = z
 const EnvSchema = z.object({
   GENERALCOMPUTE_API_KEY: z.string().optional(),
   GC_BASE_URL: z.string().url().default("https://api.generalcompute.com/v1"),
-  GC_MODEL: z.string().default("gpt-oss-120b"),
+  GC_MODEL: z.string().default("minimax-m2.7"),
   MODEL_TIMEOUT_MS: numberFromEnv,
   MODEL_MAX_TOKENS: numberFromEnv,
   CONFIDENCE_THRESHOLD: numberFromEnv,

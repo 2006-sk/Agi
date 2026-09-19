@@ -55,7 +55,8 @@ Things to know when wiring `services/intelligence` (Pranay) into the gateway (Sh
 
 ## Latency and failure behaviour
 
-- Model latency on `gpt-oss-120b` is ~2.3-2.8 s per turn today; total turn ~2.5 s. Set frontend timeouts to at least 8 s per turn (model timeout 4 s + one retry + fallback).
+- Model latency on `minimax-m2.7` (the default) is ~1.9-2.9 s per turn today; `gpt-oss-120b` and `deepseek-v3.2` are in the same range. Total turn is model latency + a few ms. Set frontend timeouts to at least 8 s per turn (model timeout 4 s + one retry + fallback).
+- `minimax-m2.7` is generous with facts: expect extra entries in `unverified_facts` (e.g. the address repeated as a fact). The verified `facts` list stays clean; render the unverified list dimmed.
 - If the model times out or returns invalid JSON twice, the service falls back to deterministic regex extraction and still returns 200 with `meta.source: "fallback"`. Life-threat phrases ("stopped breathing", "not responding") always take effect regardless of the model. Two consecutive fallback turns are a good trigger for `system.degraded` with `failed_dependency: "general_compute"`.
 - Model output with `confidence` below 0.5 is ignored (`meta.validation: "low_confidence"`); the turn still succeeds.
 

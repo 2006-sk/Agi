@@ -44,7 +44,7 @@ Without a key the service starts with a deterministic mock model (`USE_MOCK_MODE
 | --- | --- | --- |
 | `GENERALCOMPUTE_API_KEY` | - | Bearer key for `https://api.generalcompute.com/v1` |
 | `GC_BASE_URL` | `https://api.generalcompute.com/v1` | OpenAI-compatible base URL |
-| `GC_MODEL` | `gpt-oss-120b` | Model id; `npm run check-model` lists what is live (e.g. `Meta-Llama-3.3-70B-Instruct`) |
+| `GC_MODEL` | `minimax-m2.7` | Model id; `npm run check-model` lists what is live (`gpt-oss-120b` and `deepseek-v3.2` are known-good alternatives) |
 | `MODEL_TIMEOUT_MS` | `4000` | Per-call timeout; then one retry, then deterministic fallback |
 | `MODEL_MAX_TOKENS` | `600` | Output cap for the extraction JSON |
 | `CONFIDENCE_THRESHOLD` | `0.5` | Model output below this is ignored (triggers still apply) |
