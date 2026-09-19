@@ -42,6 +42,13 @@ export interface GatewayConfig {
   vapiSecret: string;
   vapiSessionId: string;
   vapiGreeting: string;
+  /**
+   * Who runs the call.
+   *  "aura" — deterministic protocol machine + SambaNova; Vapi is mouth/ears.
+   *  "vapi" — the Vapi agent's own model and tools; AURA keeps state, the deck
+   *           and the human gate.
+   */
+  voiceBrain: "aura" | "vapi";
 }
 
 export const config: GatewayConfig = {
@@ -76,4 +83,5 @@ export const config: GatewayConfig = {
   vapiGreeting:
     process.env.VAPI_GREETING ??
     "Emergency services. This line is answered by an AI assistant with a human dispatcher supervising. Tell me what is happening and where you are.",
+  voiceBrain: process.env.VOICE_BRAIN === "vapi" ? "vapi" : "aura",
 };

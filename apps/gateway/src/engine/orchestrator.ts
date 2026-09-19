@@ -467,35 +467,64 @@ export class Orchestrator {
 
     const plan = response.state.response_plan;
     const unitId = plan?.route?.unit_id ?? plan?.units?.[0]?.unit_id ?? "";
-    const projection = this.projection(session);
 
-    const approval: PendingApproval = {
+    this.raiseApproval(session, {
       approval_id: actionId,
       tool: { name: consequential.name, arguments: consequential.arguments ?? {} },
       summary: summarize(response.state, payload),
       unit_id: unitId,
-      route_id: unitId ? routeIdFor(projection, unitId) : "",
+      reason: consequential.reason,
+    });
+  }
+
+  /**
+   * Open the human gate.
+   *
+   * Public because both brains reach it: the AURA protocol machine raises it
+   * from a `dispatch.proposed`, and in Vapi mode the agent reaches it by
+   * calling the `request_dispatch` tool. There is exactly one gate either way.
+   */
+  raiseApproval(
+    session: Session,
+    input: {
+      approval_id: string;
+      tool: { name: string; arguments: Record<string, unknown> };
+      summary: string;
+      unit_id: string;
+      reason: string;
+    },
+  ): PendingApproval {
+    const existing = session.approvals.get(input.approval_id);
+    if (existing) return existing;
+
+    const approval: PendingApproval = {
+      approval_id: input.approval_id,
+      tool: input.tool,
+      summary: input.summary,
+      unit_id: input.unit_id,
+      route_id: input.unit_id ? routeIdFor(this.projection(session), input.unit_id) : "",
       requested_at: this.now().toISOString(),
       resolved: false,
     };
-    session.approvals.set(actionId, approval);
+    session.approvals.set(approval.approval_id, approval);
 
     // `approval.requested` is in both vocabularies: one event, both field sets.
     this.publish(
       session,
       this.event(session, CANON_EVENT.ApprovalRequested, {
-        action: consequential.name,
+        action: approval.tool.name,
         risk: "high",
         timeout: this.config.approvalTimeoutS,
-        reason: consequential.reason,
+        reason: input.reason,
         incident_id: incidentIdFor(session.session_id),
-        approval_id: actionId,
+        approval_id: approval.approval_id,
         summary: approval.summary,
         unit_id: approval.unit_id,
         route_id: approval.route_id,
         expires_in_s: this.config.approvalTimeoutS,
       }),
     );
+    return approval;
   }
 
   /**

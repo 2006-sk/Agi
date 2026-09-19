@@ -186,6 +186,8 @@ export interface ResponsePlan {
   units: ResponderUnit[];
   route: RoutePlan | null;
   reason: string;
+  /** Required by the intelligence service when a plan is round-tripped back. */
+  proposed_at?: string;
   cad_id: string | null;
 }
 

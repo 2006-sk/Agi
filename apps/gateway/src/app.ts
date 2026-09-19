@@ -87,7 +87,7 @@ export async function buildGateway(options: BuildOptions = {}): Promise<AuraGate
   await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator }));
   await app.register(consoleRoutes);
   await app.register(async (scope) => twilioRoutes(scope, { store, orchestrator, config }));
-  await app.register(async (scope) => vapiRoutes(scope, { store, orchestrator, config }));
+  await app.register(async (scope) => vapiRoutes(scope, { store, orchestrator, intelligence, config }));
 
   return { app, store, hub, orchestrator, config };
 }

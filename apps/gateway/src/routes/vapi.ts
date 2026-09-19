@@ -9,11 +9,14 @@ import {
   gradiumSynthesize,
 } from "../clients/gradium.js";
 import { SAFE_FALLBACK_LINE, type Orchestrator } from "../engine/orchestrator.js";
+import { runVapiTool, type ToolCall } from "../engine/vapiTools.js";
+import type { IntelligenceClient } from "../clients/intelligence.js";
 import type { Session, SessionStore } from "../session/store.js";
 
 export interface VapiDeps {
   store: SessionStore;
   orchestrator: Orchestrator;
+  intelligence: IntelligenceClient;
   config: GatewayConfig;
 }
 
@@ -104,7 +107,7 @@ function streamCompletion(reply: FastifyReply, content: string, model: string): 
 }
 
 export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<void> {
-  const { store, orchestrator, config } = deps;
+  const { store, orchestrator, intelligence, config } = deps;
   const MODEL = "aura-protocol";
 
   function authorized(request: FastifyRequest): boolean {
@@ -381,6 +384,52 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
     return reply.send({ ok: true });
   });
 
+  /**
+   * Vapi mode: the agent's tool calls.
+   *
+   * This is the whole integration surface when Vapi owns the brain. Each call
+   * moves the incident and lights the deck; `request_dispatch` opens the human
+   * gate and returns "pending", so the agent can ask for an ambulance but can
+   * never send one.
+   */
+  app.post("/vapi/tools", async (request, reply) => {
+    if (!authorized(request)) return reply.code(401).send({ error: "unauthorized" });
+
+    const message = ((request.body ?? {}) as { message?: Record<string, unknown> }).message ?? {};
+    const call = (message.call ?? {}) as { id?: string; customer?: { number?: string } };
+    const session = ensureSession(sessionIdFor(call.id ?? "unknown"), call.customer?.number);
+
+    const rawList = Array.isArray(message.toolCallList) ? message.toolCallList : [];
+    const results = [];
+    for (const raw of rawList as Record<string, unknown>[]) {
+      // Vapi has shipped both a flat shape and an OpenAI-style nested one.
+      const fn = (raw.function ?? {}) as Record<string, unknown>;
+      const name = String(raw.name ?? fn.name ?? "");
+      let args = (raw.arguments ?? fn.arguments ?? {}) as unknown;
+      if (typeof args === "string") {
+        try {
+          args = JSON.parse(args);
+        } catch {
+          args = {};
+        }
+      }
+      const toolCall: ToolCall = {
+        id: String(raw.id ?? raw.toolCallId ?? ""),
+        name,
+        arguments: (args ?? {}) as Record<string, unknown>,
+      };
+      if (!toolCall.name) continue;
+
+      request.log.info(
+        { session_id: session.session_id, tool: toolCall.name, args: toolCall.arguments },
+        "vapi agent tool call",
+      );
+      results.push(await runVapiTool(toolCall, { session, orchestrator, intelligence }));
+    }
+
+    return reply.send({ results });
+  });
+
   /** What to configure, and whether it is ready. */
   app.get("/vapi/config", async () => {
     const base = config.publicBaseUrl;
@@ -393,6 +442,8 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
       transcriber_url: base ? `${wsBase}/vapi/transcriber` : null,
       voice_url: base ? `${base}/vapi/voice` : null,
       server_url: base ? `${base}/vapi/webhook` : null,
+      tools_url: base ? `${base}/vapi/tools` : null,
+      mode: config.voiceBrain,
       phone_number: config.vapiPhoneNumber || null,
       session_mode: config.vapiSessionId === "call_id" ? "one session per call" : config.vapiSessionId,
       note: base
