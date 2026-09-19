@@ -1,0 +1,57 @@
+{
+  "id": "GENERAL_INTAKE_01",
+  "name": "General intake - unclassified or non-medical call",
+  "category": "unknown",
+  "min_priority": "unknown",
+  "default_services": [],
+  "always_legal_tools": ["normalize_address", "geocode_address"],
+  "initial_step": "verify_location",
+  "steps": [
+    {
+      "id": "verify_location",
+      "goal": "Confirm the exact address of the emergency",
+      "required": ["location_verified"],
+      "allowed_next": ["identify_problem"],
+      "legal_tools": ["normalize_address", "geocode_address"],
+      "prompts": [
+        { "when": "!location_captured", "text": "This is AURA emergency intake. What is the exact address of the emergency?" },
+        { "when": "!location_verified", "text": "I heard {{location_raw}}. Can you confirm that address?" },
+        { "when": "default", "text": "Thank you, I have {{location_normalized}}." }
+      ]
+    },
+    {
+      "id": "identify_problem",
+      "goal": "Establish what is happening",
+      "required": ["chief_complaint"],
+      "allowed_next": ["prepare_response"],
+      "prompts": [
+        { "when": "default", "text": "Tell me exactly what is happening." }
+      ]
+    },
+    {
+      "id": "prepare_response",
+      "goal": "Select services for the classified category",
+      "required": ["services_recommended"],
+      "allowed_next": ["human_dispatch_approval"],
+      "human_required": true,
+      "legal_tools": ["find_available_units", "calculate_route", "request_specialist"],
+      "prompts": [
+        { "when": "default", "text": "I have your location and what's happening. I'm connecting you with a dispatcher now; stay on the line." }
+      ]
+    },
+    {
+      "id": "human_dispatch_approval",
+      "goal": "Hold the prepared dispatch for human approval",
+      "required": [],
+      "human_required": true,
+      "allowed_next": [],
+      "legal_tools": ["find_available_units", "calculate_route", "create_cad_draft", "request_specialist"],
+      "prompts": [
+        { "when": "!location_verified", "text": "Help is being prepared, but I need the exact address. Where are you right now?" },
+        { "when": "plan_prepared", "text": "Responders are being prepared for {{location_normalized}}, about {{eta_minutes}} minutes away. Stay on the line." },
+        { "when": "default", "text": "I'm alerting the dispatcher now. Stay on the line." }
+      ]
+    }
+  ],
+  "escalations": []
+}

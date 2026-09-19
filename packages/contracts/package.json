@@ -1,0 +1,8 @@
+{
+  "name": "@aura/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared AURA contracts. Shresth owns this file; every service imports it.",
+  "exports": { ".": "./src/index.ts" }
+}
