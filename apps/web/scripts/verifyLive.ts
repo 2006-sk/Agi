@@ -188,7 +188,16 @@ async function main() {
   S.getState().applyEvents(full);
   st = S.getState();
 
-  check('no unknown types after approval', st.stats.unknown === 0, st.stats);
+  const ignoredAfter = full.filter((e) => CANONICAL.has(e.type));
+  check('every post-approval event applied or canonical', st.stats.applied + st.stats.unknown === full.length, {
+    applied: st.stats.applied,
+    unknown: st.stats.unknown,
+    sent: full.length,
+  });
+  check('post-approval ignores are exactly the canonical ones', st.stats.unknown === ignoredAfter.length, {
+    unknown: st.stats.unknown,
+    canonical: ignoredAfter.length,
+  });
   check('nothing stalled after approval', st.stats.buffered === 0, st.stats);
   check('approval shows granted', st.approval?.state === 'granted', st.approval);
   check('approved signal fired', st.signals.approved >= 1, st.signals.approved);
