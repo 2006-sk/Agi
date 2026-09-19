@@ -5,3 +5,8 @@ dist/
 *.log
 .DS_Store
 coverage/
+.venv/
+__pycache__/
+*.pyc
+uv.lock
+services/voice/.venv/

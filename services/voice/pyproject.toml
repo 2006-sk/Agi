@@ -1,0 +1,29 @@
+[project]
+name = "aura-voice"
+version = "0.1.0"
+description = "AURA real-time voice layer — Pipecat + Gradium STT/TTS"
+readme = "README.md"
+authors = [
+    { name = "Aditya", email = "aditya.nagpal@sjsu.edu" }
+]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pipecat-ai[gradium,local,silero]>=0.0.95",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.0",
+]
+
+[project.scripts]
+aura-voice = "aura_voice.main:main"
+
+[build-system]
+requires = ["uv_build>=0.8.14,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = true
