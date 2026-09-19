@@ -10,6 +10,7 @@ import { Orchestrator } from "./engine/orchestrator.js";
 import { callRoutes } from "./routes/calls.js";
 import { consoleRoutes } from "./routes/console.js";
 import { twilioRoutes } from "./routes/twilio.js";
+import { vapiRoutes } from "./routes/vapi.js";
 import { healthRoutes } from "./routes/health.js";
 import { voiceEventRoutes } from "./routes/voiceEvents.js";
 import { wsRoutes } from "./routes/ws.js";
@@ -86,6 +87,7 @@ export async function buildGateway(options: BuildOptions = {}): Promise<AuraGate
   await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator }));
   await app.register(consoleRoutes);
   await app.register(async (scope) => twilioRoutes(scope, { store, orchestrator, config }));
+  await app.register(async (scope) => vapiRoutes(scope, { store, orchestrator, config }));
 
   return { app, store, hub, orchestrator, config };
 }

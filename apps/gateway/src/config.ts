@@ -29,6 +29,19 @@ export interface GatewayConfig {
   twilioSessionId: string;
   /** Public https base a tunnel exposes; required for Twilio signature checks. */
   publicBaseUrl: string;
+  gradiumApiKey: string;
+  gradiumVoiceId: string;
+  defaultLanguage: string;
+  /** Silence after the last word before an utterance is final (end-of-turn). */
+  sttSilenceMs: number;
+  vapiPrivateKey: string;
+  vapiPublicKey: string;
+  vapiPhoneNumberId: string;
+  vapiPhoneNumber: string;
+  vapiAssistantId: string;
+  vapiSecret: string;
+  vapiSessionId: string;
+  vapiGreeting: string;
 }
 
 export const config: GatewayConfig = {
@@ -49,4 +62,18 @@ export const config: GatewayConfig = {
   twilioVoice: process.env.TWILIO_VOICE ?? "Polly.Joanna-Neural",
   twilioSessionId: process.env.TWILIO_SESSION_ID ?? "aura-demo-0197",
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? "").replace(/\/+$/, ""),
+  gradiumApiKey: process.env.GRADIUM_API_KEY ?? "",
+  gradiumVoiceId: process.env.GRADIUM_VOICE_ID ?? "r2sIQdqqoqgRJuXw",
+  defaultLanguage: process.env.DEFAULT_LANGUAGE ?? "en",
+  sttSilenceMs: int("STT_SILENCE_MS", 800),
+  vapiPrivateKey: process.env.VAPI_PRIVATE_KEY ?? "",
+  vapiPublicKey: process.env.VAPI_PUBLIC_KEY ?? "",
+  vapiPhoneNumberId: process.env.VAPI_PHONE_NUMBER_ID ?? "",
+  vapiPhoneNumber: process.env.VAPI_PHONE_NUMBER ?? "",
+  vapiAssistantId: process.env.VAPI_ASSISTANT_ID ?? "",
+  vapiSecret: process.env.VAPI_SECRET ?? "",
+  vapiSessionId: process.env.VAPI_SESSION_ID ?? "aura-demo-0197",
+  vapiGreeting:
+    process.env.VAPI_GREETING ??
+    "Emergency services. This line is answered by an AI assistant with a human dispatcher supervising. Tell me what is happening and where you are.",
 };
