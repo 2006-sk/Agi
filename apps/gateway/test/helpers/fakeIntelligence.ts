@@ -291,7 +291,7 @@ export class FakeIntelligence implements IntelligenceClient {
       });
     }
 
-    const state = { ...(body.current_state as IncidentState) };
+    const state = { ...(body.current_state as unknown as IncidentState) };
     const events: AuraEvent[] = [];
     let sequence = 0;
     const emit = (type: string, payload: Record<string, unknown>) => {

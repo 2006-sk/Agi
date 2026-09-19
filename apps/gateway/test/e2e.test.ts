@@ -113,9 +113,11 @@ afterAll(async () => {
 describe("service wiring", () => {
   it("reports both services from one health call", async () => {
     const response = await fetch(`${baseUrl}/health/deps`);
-    const body = await response.json();
+    const body = (await response.json()) as {
+      intelligence: { ok: boolean; detail: { service: string } };
+    };
     expect(body.intelligence.ok).toBe(true);
-    expect((body.intelligence.detail as { service: string }).service).toBe("aura-intelligence");
+    expect(body.intelligence.detail.service).toBe("aura-intelligence");
   });
 });
 
@@ -243,7 +245,8 @@ describe("the approval gate is real", () => {
     });
 
     expect(response.status).toBe(403);
-    expect((await response.json()).error).toBe("human_approval_required");
+    const refusal = (await response.json()) as { error: string };
+    expect(refusal.error).toBe("human_approval_required");
   }, 120000);
 
   it("creates the CAD record and moves the unit once a human approves", async () => {

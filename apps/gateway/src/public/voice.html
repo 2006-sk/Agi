@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AURA Voice Console</title>
+    <style>
+      :root {
+        --bg: #05070c;
+        --panel: #0c111b;
+        --line: #1c2534;
+        --text: #e6ecf5;
+        --dim: #7b8798;
+        --accent: #4da3ff;
+        --caller: #ffd166;
+        --critical: #ff4d5e;
+        --ok: #39d98a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+        padding: 24px 16px 48px;
+      }
+      main { max-width: 860px; margin: 0 auto; }
+      h1 { font-size: 18px; letter-spacing: 0.02em; margin: 0 0 4px; }
+      .sub { color: var(--dim); font-size: 13px; margin-bottom: 20px; }
+      .warn {
+        border: 1px solid #45351a; background: #17120a; color: #e8c37a;
+        padding: 10px 12px; border-radius: 8px; font-size: 12.5px; margin-bottom: 20px;
+      }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+      button {
+        background: var(--panel); color: var(--text); border: 1px solid var(--line);
+        padding: 9px 14px; border-radius: 8px; font: inherit; cursor: pointer;
+      }
+      button:hover:not(:disabled) { border-color: var(--accent); }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      button.primary { background: #10233b; border-color: #23486f; }
+      button.danger { background: #2a1013; border-color: #5c2028; }
+      input {
+        background: var(--panel); color: var(--text); border: 1px solid var(--line);
+        padding: 9px 12px; border-radius: 8px; font: inherit; flex: 1; min-width: 220px;
+      }
+      .panel {
+        background: var(--panel); border: 1px solid var(--line);
+        border-radius: 10px; padding: 14px; margin-bottom: 14px;
+      }
+      .panel h2 {
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+        color: var(--dim); margin: 0 0 10px; font-weight: 600;
+      }
+      #log { max-height: 320px; overflow-y: auto; }
+      .line { padding: 5px 0; border-bottom: 1px solid #121926; }
+      .line:last-child { border-bottom: 0; }
+      .who { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); }
+      .caller .who { color: var(--caller); }
+      .aura .who { color: var(--accent); }
+      .partial { opacity: 0.5; font-style: italic; }
+      .pill {
+        display: inline-block; padding: 2px 8px; border-radius: 999px;
+        font-size: 11px; border: 1px solid var(--line); color: var(--dim);
+      }
+      .pill.on { color: var(--ok); border-color: #1d4634; }
+      .pill.crit { color: var(--critical); border-color: #4d1d24; }
+      .meter { height: 4px; background: #121926; border-radius: 2px; overflow: hidden; margin-top: 10px; }
+      .meter > div { height: 100%; width: 0%; background: var(--accent); transition: width 90ms linear; }
+      dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
+      dt { color: var(--dim); }
+      dd { margin: 0; }
+      #events { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--dim); max-height: 180px; overflow-y: auto; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>AURA Voice Console</h1>
+      <p class="sub">Browser microphone fallback — talks to the gateway exactly like the Pipecat service does.</p>
+
+      <div class="warn">
+        <strong>Fallback only.</strong> This uses the browser's Web Speech API, not Gradium.
+        The judged demo must run Aditya's Pipecat + Gradium service; this page exists so the
+        voice loop still works on a machine where that service cannot install.
+      </div>
+
+      <div class="row">
+        <input id="session" value="aura-demo-0197" spellcheck="false" />
+        <button id="mic" class="primary">Start mic</button>
+        <button id="demo">Run demo script</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div class="row">
+        <input id="text" placeholder="…or type what the caller says and press Enter" spellcheck="false" />
+        <button id="send">Send</button>
+      </div>
+
+      <div class="panel">
+        <h2>Status</h2>
+        <div class="row" style="margin: 0">
+          <span class="pill" id="p-socket">socket: offline</span>
+          <span class="pill" id="p-mic">mic: off</span>
+          <span class="pill" id="p-priority">priority: unknown</span>
+          <span class="pill" id="p-step">step: —</span>
+        </div>
+        <div class="meter"><div id="level"></div></div>
+      </div>
+
+      <div class="panel" id="approval-panel" hidden>
+        <h2>Human approval required</h2>
+        <p id="approval-summary" style="margin: 0 0 10px"></p>
+        <div class="row" style="margin: 0">
+          <button id="approve" class="primary">Approve dispatch</button>
+          <button id="reject" class="danger">Reject</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Conversation</h2>
+        <div id="log"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Incident</h2>
+        <dl id="incident"><dt>state</dt><dd>no call yet</dd></dl>
+      </div>
+
+      <div class="panel">
+        <h2>Event stream</h2>
+        <div id="events"></div>
+      </div>
+    </main>
+
+    <script>
+      /*
+       * A drop-in stand-in for the voice service.
+       *
+       * It speaks the same contract Aditya's client does — transcript and agent
+       * events to /internal/voice-events, finals to /api/calls/{id}/utterance —
+       * so the gateway, the deck and the intelligence service cannot tell the
+       * difference. Only the STT/TTS engines differ.
+       */
+      const $ = (id) => document.getElementById(id);
+      const sessionInput = $("session");
+      const sessionId = () => sessionInput.value.trim() || "aura-demo-0197";
+
+      let socket = null;
+      let recognition = null;
+      let micOn = false;
+      let speaking = false;
+      let pendingApproval = null;
+      let audioCtx = null;
+      let levelTimer = null;
+
+      /* ---------------------------------------------------------- */
+      /* Transport                                                   */
+      /* ---------------------------------------------------------- */
+
+      function uuid() {
+        return "evt_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
+      }
+
+      async function emit(type, payload) {
+        try {
+          await fetch("/internal/voice-events", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              event_id: uuid(),
+              session_id: sessionId(),
+              type,
+              timestamp: new Date().toISOString(),
+              payload,
+            }),
+          });
+        } catch (err) {
+          console.warn("emit failed", type, err);
+        }
+      }
+
+      async function submitUtterance(text) {
+        // `source: voice` tells the gateway this client publishes its own
+        // transcript and speaks the reply itself — same as the Pipecat bridge.
+        const response = await fetch(`/api/calls/${encodeURIComponent(sessionId())}/utterance`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text, speaker: "caller", language: "en", source: "voice" }),
+        });
+        if (!response.ok) return null;
+        return response.json();
+      }
+
+      function connect() {
+        if (socket) socket.close();
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        socket = new WebSocket(`${proto}://${location.host}/ws/calls/${encodeURIComponent(sessionId())}`);
+        socket.onopen = () => setPill("p-socket", "socket: live", true);
+        socket.onclose = () => setPill("p-socket", "socket: offline", false);
+        socket.onerror = () => setPill("p-socket", "socket: error", false);
+        socket.onmessage = (ev) => {
+          let evt;
+          try { evt = JSON.parse(ev.data); } catch { return; }
+          onEvent(evt);
+        };
+      }
+
+      /* ---------------------------------------------------------- */
+      /* Rendering                                                   */
+      /* ---------------------------------------------------------- */
+
+      function setPill(id, text, on, critical) {
+        const el = $(id);
+        el.textContent = text;
+        el.className = "pill" + (critical ? " crit" : on ? " on" : "");
+      }
+
+      let partialEl = null;
+      function addLine(speaker, text, partial) {
+        const log = $("log");
+        if (partial) {
+          if (!partialEl) {
+            partialEl = document.createElement("div");
+            partialEl.className = "line partial " + speaker;
+            log.appendChild(partialEl);
+          }
+          partialEl.innerHTML = `<div class="who">${speaker}</div><div>${escapeHtml(text)}</div>`;
+        } else {
+          if (partialEl) { partialEl.remove(); partialEl = null; }
+          const el = document.createElement("div");
+          el.className = "line " + speaker;
+          el.innerHTML = `<div class="who">${speaker}</div><div>${escapeHtml(text)}</div>`;
+          log.appendChild(el);
+        }
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]),
+        );
+      }
+
+      function onEvent(evt) {
+        const p = evt.payload || {};
+        const ev = $("events");
+        ev.insertAdjacentHTML("afterbegin", `<div>${evt.sequence} ${escapeHtml(evt.type)}</div>`);
+        while (ev.childElementCount > 120) ev.lastElementChild.remove();
+
+        if (evt.type === "session.started") {
+          $("log").innerHTML = "";
+          $("approval-panel").hidden = true;
+          pendingApproval = null;
+          setPill("p-priority", "priority: unknown", false);
+          setPill("p-step", "step: —", false);
+        }
+
+        if (evt.type === "transcript.final" && p.speaker === "aura") addLine("aura", p.text, false);
+
+        if (evt.type === "incident.updated") {
+          renderIncident(p);
+          const critical = p.priority === "critical";
+          setPill("p-priority", `priority: ${p.priority}`, !critical, critical);
+          setPill("p-step", `step: ${p.protocol?.step ?? "—"}`, false);
+        }
+
+        if (evt.type === "approval.requested") {
+          pendingApproval = p.approval_id;
+          $("approval-summary").textContent = p.summary || "Dispatch requires approval";
+          $("approval-panel").hidden = false;
+        }
+        if (evt.type === "approval.resolved") {
+          $("approval-panel").hidden = true;
+          pendingApproval = null;
+        }
+        if (evt.type === "system.degraded") {
+          addLine("aura", `[degraded: ${p.failed_dependency} → ${p.fallback_mode}]`, false);
+        }
+      }
+
+      function renderIncident(s) {
+        const plan = s.response_plan;
+        const rows = [
+          ["category", s.category],
+          ["priority", s.priority],
+          ["status", s.status],
+          ["address", s.location?.normalized || s.location?.raw || "—"],
+          ["verified", String(Boolean(s.location?.verified))],
+          ["protocol", `${s.protocol?.id ?? "—"} · ${s.protocol?.step ?? "—"}`],
+          ["facts", (s.facts || []).join(", ") || "—"],
+          ["missing", (s.missing_fields || []).join(", ") || "—"],
+          ["unit", plan?.route?.unit_id ? `${plan.route.unit_id} · ETA ${plan.route.eta_minutes} min` : "—"],
+          ["CAD", plan?.cad_id || "—"],
+        ];
+        $("incident").innerHTML = rows
+          .map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`)
+          .join("");
+      }
+
+      /* ---------------------------------------------------------- */
+      /* Speech out                                                  */
+      /* ---------------------------------------------------------- */
+
+      async function speak(text) {
+        if (!text) return;
+        speaking = true;
+        await emit("agent.speaking", { text, active: true });
+        await new Promise((resolve) => {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.rate = 1.05;
+          utter.onend = resolve;
+          utter.onerror = resolve;
+          speechSynthesis.speak(utter);
+        });
+        speaking = false;
+        await emit("agent.speaking", { text, active: false });
+      }
+
+      async function cancelSpeech(reason) {
+        if (!speaking) return;
+        const wasSaying = speechSynthesis.speaking;
+        speechSynthesis.cancel();
+        speaking = false;
+        if (wasSaying) await emit("agent.interrupted", { interrupted_text: "", reason });
+      }
+
+      /* ---------------------------------------------------------- */
+      /* Speech in                                                   */
+      /* ---------------------------------------------------------- */
+
+      async function startLevelMeter() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 512;
+          source.connect(analyser);
+          const buf = new Uint8Array(analyser.frequencyBinCount);
+          // ~15 Hz, matching the voice service's AUDIO_LEVEL_HZ.
+          levelTimer = setInterval(() => {
+            analyser.getByteTimeDomainData(buf);
+            let sum = 0;
+            for (const v of buf) sum += (v - 128) ** 2;
+            const level = Math.min(1, Math.sqrt(sum / buf.length) / 40);
+            $("level").style.width = `${Math.round(level * 100)}%`;
+            emit("audio.level", { level: Number(level.toFixed(3)), speaker: speaking ? "aura" : "caller" });
+          }, 66);
+        } catch (err) {
+          console.warn("level meter unavailable", err);
+        }
+      }
+
+      function startMic() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+          alert("This browser has no Web Speech API. Use Chrome, or type into the text box.");
+          return;
+        }
+        recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onresult = async (event) => {
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            const text = result[0].transcript.trim();
+            if (!text) continue;
+
+            if (!result.isFinal) {
+              addLine("caller", text, true);
+              emit("transcript.partial", {
+                speaker: "caller", text, confidence: result[0].confidence || 0.5, language: "en",
+              });
+              // Barge-in: real words while AURA talks cut it off immediately.
+              if (speaking && text.length >= 12) await cancelSpeech("barge_in");
+              continue;
+            }
+
+            addLine("caller", text, false);
+            await emit("transcript.final", {
+              speaker: "caller", text, confidence: result[0].confidence || 0.9, language: "en",
+            });
+            await cancelSpeech("barge_in");
+            const reply = await submitUtterance(text);
+            if (reply && reply.reply_text) await speak(reply.reply_text);
+          }
+        };
+
+        recognition.onerror = (e) => {
+          if (e.error === "no-speech" || e.error === "aborted") return;
+          emit("voice.error", { code: e.error, message: String(e.error), recoverable: true });
+        };
+        // Chrome stops continuous recognition on its own; restart while armed.
+        recognition.onend = () => { if (micOn) try { recognition.start(); } catch {} };
+
+        recognition.start();
+        micOn = true;
+        setPill("p-mic", "mic: listening", true);
+        $("mic").textContent = "Stop mic";
+        startLevelMeter();
+      }
+
+      function stopMic() {
+        micOn = false;
+        if (recognition) { recognition.onend = null; recognition.stop(); recognition = null; }
+        if (levelTimer) { clearInterval(levelTimer); levelTimer = null; }
+        if (audioCtx) { audioCtx.close(); audioCtx = null; }
+        $("level").style.width = "0%";
+        setPill("p-mic", "mic: off", false);
+        $("mic").textContent = "Start mic";
+      }
+
+      /* ---------------------------------------------------------- */
+      /* Controls                                                    */
+      /* ---------------------------------------------------------- */
+
+      $("mic").onclick = () => (micOn ? stopMic() : startMic());
+
+      async function sendTyped() {
+        const input = $("text");
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        addLine("caller", text, false);
+        await emit("transcript.final", { speaker: "caller", text, confidence: 1, language: "en" });
+        await cancelSpeech("barge_in");
+        const reply = await submitUtterance(text);
+        if (reply && reply.reply_text) await speak(reply.reply_text);
+      }
+      $("send").onclick = sendTyped;
+      $("text").onkeydown = (e) => { if (e.key === "Enter") sendTyped(); };
+
+      $("demo").onclick = async () => {
+        await fetch(`/api/calls/${encodeURIComponent(sessionId())}/demo`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ scenario: "cardiac" }),
+        });
+      };
+
+      $("reset").onclick = async () => {
+        await cancelSpeech("reset");
+        await fetch(`/api/calls/${encodeURIComponent(sessionId())}/reset`, { method: "POST" });
+      };
+
+      async function decide(approved) {
+        await fetch(`/api/calls/${encodeURIComponent(sessionId())}/approval`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            approval_id: pendingApproval, approved, reviewer: "console",
+          }),
+        });
+      }
+      $("approve").onclick = () => decide(true);
+      $("reject").onclick = () => decide(false);
+
+      sessionInput.onchange = connect;
+      connect();
+    </script>
+  </body>
+</html>

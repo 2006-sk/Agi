@@ -8,6 +8,8 @@ import { HttpVoiceClient, type VoiceClient } from "./clients/voice.js";
 import { config as defaultConfig, type GatewayConfig } from "./config.js";
 import { Orchestrator } from "./engine/orchestrator.js";
 import { callRoutes } from "./routes/calls.js";
+import { consoleRoutes } from "./routes/console.js";
+import { twilioRoutes } from "./routes/twilio.js";
 import { healthRoutes } from "./routes/health.js";
 import { voiceEventRoutes } from "./routes/voiceEvents.js";
 import { wsRoutes } from "./routes/ws.js";
@@ -45,6 +47,18 @@ export async function buildGateway(options: BuildOptions = {}): Promise<AuraGate
   });
 
   await app.register(cors, { origin: true });
+  // Twilio webhooks are form-encoded; Fastify only speaks JSON out of the box.
+  app.addContentTypeParser(
+    "application/x-www-form-urlencoded",
+    { parseAs: "string" },
+    (_request, body, done) => {
+      try {
+        done(null, Object.fromEntries(new URLSearchParams(body as string)));
+      } catch (error) {
+        done(error as Error, undefined);
+      }
+    },
+  );
   await app.register(websocket);
 
   const store = options.store ?? new SessionStore();
@@ -70,6 +84,8 @@ export async function buildGateway(options: BuildOptions = {}): Promise<AuraGate
   await app.register(async (scope) => callRoutes(scope, { store, orchestrator }));
   await app.register(async (scope) => voiceEventRoutes(scope, { store, orchestrator }));
   await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator }));
+  await app.register(consoleRoutes);
+  await app.register(async (scope) => twilioRoutes(scope, { store, orchestrator, config }));
 
   return { app, store, hub, orchestrator, config };
 }

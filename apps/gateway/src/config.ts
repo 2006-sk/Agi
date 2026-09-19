@@ -21,6 +21,14 @@ export interface GatewayConfig {
   dispatchTravelMs: number;
   dispatchTickMs: number;
   approvalTimeoutS: number;
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+  twilioNumber: string;
+  twilioVoice: string;
+  /** Pin phone calls to one session id, or "call_sid" for one session per call. */
+  twilioSessionId: string;
+  /** Public https base a tunnel exposes; required for Twilio signature checks. */
+  publicBaseUrl: string;
 }
 
 export const config: GatewayConfig = {
@@ -35,4 +43,10 @@ export const config: GatewayConfig = {
   dispatchTravelMs: int("DISPATCH_TRAVEL_MS", 9000),
   dispatchTickMs: int("DISPATCH_TICK_MS", 300),
   approvalTimeoutS: int("APPROVAL_TIMEOUT_S", 120),
+  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID ?? "",
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
+  twilioNumber: process.env.TWILIO_NUMBER ?? "",
+  twilioVoice: process.env.TWILIO_VOICE ?? "Polly.Joanna-Neural",
+  twilioSessionId: process.env.TWILIO_SESSION_ID ?? "aura-demo-0197",
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? "").replace(/\/+$/, ""),
 };

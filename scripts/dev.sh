@@ -9,21 +9,26 @@
 # before anyone reaches for the microphone.
 #
 # Usage:
-#   ./scripts/dev.sh            # everything
-#   ./scripts/dev.sh --no-voice # skip the Python voice service (no mic / no Gradium key)
-#   ./scripts/dev.sh --no-web   # backend only
+#   ./scripts/dev.sh          # intelligence + gateway (+ browser voice console)
+#   ./scripts/dev.sh --voice  # also Aditya's Pipecat/Gradium service
+#   ./scripts/dev.sh --web    # also the Next.js deck, if nobody else is running it
+#   ./scripts/dev.sh --all    # everything
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 mkdir -p logs
 
-WITH_VOICE=1
-WITH_WEB=1
+# The voice service needs a Gradium key and a working pipecat install; the deck
+# is run by whoever is working on it. Both are opt-in so the default start is
+# the part that always works.
+WITH_VOICE=0
+WITH_WEB=0
 for arg in "$@"; do
   case "$arg" in
-    --no-voice) WITH_VOICE=0 ;;
-    --no-web)   WITH_WEB=0 ;;
+    --voice) WITH_VOICE=1 ;;
+    --web)   WITH_WEB=1 ;;
+    --all)   WITH_VOICE=1; WITH_WEB=1 ;;
     *) echo "unknown flag: $arg" >&2; exit 2 ;;
   esac
 done
@@ -76,7 +81,7 @@ if [ "$WITH_VOICE" = "1" ]; then
     echo "      ${DIM}continuing without voice — text and demo modes still work${OFF}"
 fi
 
-# 4. Web (Kenil). Points at the gateway via NEXT_PUBLIC_AURA_WS_URL.
+# 4. Web (Kenil). Opt-in: usually already running in its own terminal.
 if [ "$WITH_WEB" = "1" ]; then
   npm --prefix apps/web run dev > logs/web.log 2>&1 &
   PIDS+=($!)
@@ -84,10 +89,11 @@ if [ "$WITH_WEB" = "1" ]; then
 fi
 
 echo ""
-echo "  deck        http://localhost:3000"
-echo "  gateway     http://localhost:8000/health"
-echo "  run demo    ./scripts/demo.sh"
-echo "  logs        logs/*.log"
+echo "  voice console  http://localhost:8000/voice   (browser mic fallback)"
+echo "  gateway        http://localhost:8000/health"
+echo "  run demo       ./scripts/demo.sh"
+echo "  deck           http://localhost:3000  (start separately: npm --prefix apps/web run dev)"
+echo "  logs           logs/*.log"
 echo ""
 echo "${DIM}Ctrl-C stops everything.${OFF}"
 wait
