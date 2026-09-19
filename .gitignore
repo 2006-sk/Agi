@@ -5,3 +5,11 @@ dist/
 *.log
 .DS_Store
 coverage/
+
+# frontend (apps/web)
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+.shots/
+.vercel
