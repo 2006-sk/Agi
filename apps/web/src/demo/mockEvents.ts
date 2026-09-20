@@ -71,7 +71,7 @@ const incident = (over: Record<string, unknown>) => ({
   facts: ["chest pain"],
   hazards: [],
   missing_fields: ["verified_address", "patient_age", "consciousness", "breathing"],
-  protocol: { id: "MED_CHEST_PAIN_01", step: "address_verification" },
+  protocol: { id: "MED_CHEST_PAIN_01", step: "verify_location" },
   recommended_services: [],
   confidence: 0.61,
   human_required: false,
@@ -110,22 +110,22 @@ export const medicalScenario = (): Script => {
 
   ev(12.8, "tool.started", { tool_name: "locate_address", safe_arguments: { query: ADDRESS.raw } });
   ev(13.0, "incident.updated", incident({}));
-  ev(13.05, "protocol.changed", { protocol_id: "MED_CHEST_PAIN_01", previous_step: null, current_step: "address_verification", reason: "Caller reported chest pain" });
+  ev(13.05, "protocol.changed", { protocol_id: "MED_CHEST_PAIN_01", previous_step: null, current_step: "verify_location", reason: "Caller reported chest pain" });
   ev(14.1, "tool.completed", { tool_name: "locate_address", result_summary: "170 St Germain Ave, San Francisco · match 0.96" });
   ev(14.2, "incident.updated", incident({
     location: verifiedLocation,
     missing_fields: ["patient_age", "consciousness", "breathing"],
-    protocol: { id: "MED_CHEST_PAIN_01", step: "patient_assessment" },
+    protocol: { id: "MED_CHEST_PAIN_01", step: "identify_problem" },
     confidence: 0.7,
   }));
-  ev(14.25, "protocol.changed", { protocol_id: "MED_CHEST_PAIN_01", previous_step: "address_verification", current_step: "patient_assessment", reason: "Address verified" });
+  ev(14.25, "protocol.changed", { protocol_id: "MED_CHEST_PAIN_01", previous_step: "verify_location", current_step: "identify_problem", reason: "Address verified" });
   ev(14.4, "tool.started", { tool_name: "classify_incident", safe_arguments: { facts: ["chest pain"] } });
   ev(15.2, "tool.completed", { tool_name: "classify_incident", result_summary: "Medical · chest pain · urgent" });
   ev(15.3, "incident.updated", incident({
     location: verifiedLocation,
     priority: "urgent",
     missing_fields: ["patient_age", "consciousness", "breathing"],
-    protocol: { id: "MED_CHEST_PAIN_01", step: "patient_assessment" },
+    protocol: { id: "MED_CHEST_PAIN_01", step: "identify_problem" },
     recommended_services: ["EMS"],
     confidence: 0.78,
   }));
@@ -139,11 +139,11 @@ export const medicalScenario = (): Script => {
     priority: "urgent",
     facts: ["chest pain", "male", "64 years", "conscious", "sweating heavily"],
     missing_fields: ["breathing"],
-    protocol: { id: "MED_CHEST_PAIN_01", step: "symptom_assessment" },
+    protocol: { id: "MED_CHEST_PAIN_01", step: "breathing_check" },
     recommended_services: ["EMS"],
     confidence: 0.86,
   }));
-  ev(24.05, "protocol.changed", { protocol_id: "MED_CHEST_PAIN_01", previous_step: "patient_assessment", current_step: "symptom_assessment", reason: "Age and consciousness confirmed" });
+  ev(24.05, "protocol.changed", { protocol_id: "MED_CHEST_PAIN_01", previous_step: "identify_problem", current_step: "breathing_check", reason: "Age and consciousness confirmed" });
   ev(24.8, "tool.completed", { tool_name: "verify_facts", result_summary: "4 of 5 required fields confirmed" });
 
   // AURA is mid-sentence when the caller barges in.
@@ -164,8 +164,8 @@ export const medicalScenario = (): Script => {
     confidence: 0.94,
     human_required: true,
   };
-  ev(29.6, "incident.updated", incident({ ...critical, protocol: { id: "MED_CARDIAC_01", step: "cardiac_arrest_confirmed" } }));
-  ev(29.65, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "MED_CHEST_PAIN_01/symptom_assessment", current_step: "cardiac_arrest_confirmed", reason: "Caller reported the patient collapsed and stopped breathing" });
+  ev(29.6, "incident.updated", incident({ ...critical, protocol: { id: "MED_CARDIAC_01", step: "conscious_check" } }));
+  ev(29.65, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "MED_CHEST_PAIN_01/breathing_check", current_step: "conscious_check", reason: "Caller reported the patient collapsed and stopped breathing", escalation: true });
 
   ev(29.9, "tool.started", { tool_name: "find_nearest_units", safe_arguments: { service: "EMS", near: ADDRESS.normalized } });
   agentSays(30.2, 33.4, "I'm getting help to you right now. Stay on the line with me.");
@@ -179,7 +179,7 @@ export const medicalScenario = (): Script => {
   });
   ev(32.1, "tool.completed", { tool_name: "prepare_ems_dispatch", result_summary: "Response prepared · awaiting human approval" });
   ev(32.4, "incident.updated", incident({ ...critical, protocol: { id: "MED_CARDIAC_01", step: "human_dispatch_approval" } }));
-  ev(32.45, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "cardiac_arrest_confirmed", current_step: "human_dispatch_approval", reason: "Dispatch is a consequential action and needs a human" });
+  ev(32.45, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "conscious_check", current_step: "human_dispatch_approval", reason: "Dispatch is a consequential action and needs a human" });
   ev(32.7, "approval.requested", { action: "Dispatch MEDIC 12 to 170 St Germain Ave", risk: "critical", timeout_seconds: 45 });
 
   b.script.events.sort((x, y) => x.at - y.at);
@@ -204,12 +204,12 @@ export const approvalOutcome = (approved: boolean): Script => {
   if (approved) {
     ev(0.25, "tool.started", { tool_name: "dispatch_unit", safe_arguments: { unit: "MEDIC 12" } });
     ev(1.0, "tool.completed", { tool_name: "dispatch_unit", result_summary: "MEDIC 12 acknowledged · en route" });
-    ev(1.1, "incident.updated", incident({ ...base, status: "dispatched", protocol: { id: "MED_CARDIAC_01", step: "responder_en_route" } }));
-    ev(1.15, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "human_dispatch_approval", current_step: "responder_en_route", reason: "Response approved by a human reviewer" });
+    ev(1.1, "incident.updated", incident({ ...base, status: "dispatched", protocol: { id: "MED_CARDIAC_01", step: "prepare_response" } }));
+    ev(1.15, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "human_dispatch_approval", current_step: "prepare_response", reason: "Response approved by a human reviewer" });
     agentSays(1.5, 6.2, "An ambulance is on its way to you now. Stay on the line. A dispatcher is joining us to guide you.");
   } else {
-    ev(0.4, "incident.updated", incident({ ...base, status: "escalated", protocol: { id: "MED_CARDIAC_01", step: "handover_to_dispatcher" } }));
-    ev(0.45, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "human_dispatch_approval", current_step: "handover_to_dispatcher", reason: "Reviewer rejected the proposed response" });
+    ev(0.4, "incident.updated", incident({ ...base, status: "escalated", protocol: { id: "MED_CARDIAC_01", step: "prepare_response" } }));
+    ev(0.45, "protocol.changed", { protocol_id: "MED_CARDIAC_01", previous_step: "human_dispatch_approval", current_step: "prepare_response", reason: "Reviewer rejected the proposed response" });
     agentSays(1.0, 4.6, "Please stay on the line. A dispatcher is taking over this call now.");
   }
   b.script.events.sort((x, y) => x.at - y.at);

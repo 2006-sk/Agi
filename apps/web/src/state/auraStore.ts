@@ -8,6 +8,7 @@ import {
   normalizeCategory,
   normalizePriority,
   parseIncident,
+  markSelected,
   parseRoute,
   parseUnits,
   stageOf,
@@ -43,7 +44,14 @@ export type ToolCall = {
   completedAt: number | null;
 };
 
-export type ProtocolChange = { previous: string | null; current: string; reason: string | null; at: number };
+export type ProtocolChange = {
+  previous: string | null;
+  current: string;
+  reason: string | null;
+  /** The service sets this when the step jumped rather than advanced — show it as an escalation. */
+  escalation: boolean;
+  at: number;
+};
 
 export type Dispatch = {
   services: string[];
@@ -276,6 +284,7 @@ const reduceCall = (call: CallState, ev: AuraEvent, now: number): CallState => {
                 previous: prevProto ? `${prevProto.id}/${prevProto.step}` : null,
                 current: `${nextProto.id}/${nextProto.step}`,
                 reason: null,
+                escalation: false,
                 at: now,
               })
             : call.protocolHistory,
@@ -293,6 +302,7 @@ const reduceCall = (call: CallState, ev: AuraEvent, now: number): CallState => {
           previous: str(p.previous_step) ?? str(p.previous),
           current: full,
           reason: str(p.reason),
+          escalation: p.escalation === true,
           at: now,
         }),
       };
@@ -329,7 +339,8 @@ const reduceCall = (call: CallState, ev: AuraEvent, now: number): CallState => {
         ...call,
         dispatch: {
           services: field.arr(p.services),
-          units: parseUnits(p.units),
+          // The service marks its chosen unit via route.unit_id, not a `selected` flag.
+          units: markSelected(parseUnits(p.units), parseRoute(p.route)),
           route: parseRoute(p.route),
           reason: str(p.reason),
           at: now,
@@ -370,7 +381,7 @@ const pushProtocol = (history: ProtocolChange[], change: ProtocolChange): Protoc
   const last = history[history.length - 1];
   if (last && last.current === change.current) {
     // protocol.changed usually follows the incident snapshot: keep one entry, but adopt its reason.
-    if (change.reason && !last.reason) return [...history.slice(0, -1), { ...last, reason: change.reason, previous: change.previous ?? last.previous }];
+    if (change.reason && !last.reason) return [...history.slice(0, -1), { ...last, reason: change.reason, escalation: last.escalation || change.escalation, previous: change.previous ?? last.previous }];
     return history;
   }
   return [...history, change].slice(-12);
