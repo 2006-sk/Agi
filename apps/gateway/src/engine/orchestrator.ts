@@ -23,6 +23,7 @@ import {
   type ToolProposal,
 } from "../clients/intelligence.js";
 import type { VoiceClient } from "../clients/voice.js";
+import type { CallAnnouncer } from "../clients/vapiControl.js";
 import { EventHub } from "../bus/hub.js";
 import { SessionQueue } from "../session/queue.js";
 import {
@@ -51,6 +52,8 @@ export interface OrchestratorDeps {
   intelligence: IntelligenceClient;
   voice: VoiceClient;
   config: GatewayConfig;
+  /** Speaks into a live phone call when dispatch happens to it. */
+  announcer?: CallAnnouncer;
   logger?: Logger;
   now?: () => Date;
 }
@@ -76,6 +79,7 @@ export class Orchestrator {
   private readonly hub: EventHub;
   private readonly intelligence: IntelligenceClient;
   private readonly voice: VoiceClient;
+  private readonly announcer: CallAnnouncer | null;
   private readonly config: GatewayConfig;
   private readonly log: Logger;
   private readonly now: () => Date;
@@ -87,6 +91,7 @@ export class Orchestrator {
     this.hub = deps.hub;
     this.intelligence = deps.intelligence;
     this.voice = deps.voice;
+    this.announcer = deps.announcer ?? null;
     this.config = deps.config;
     this.log = deps.logger ?? NOOP_LOGGER;
     this.now = deps.now ?? (() => new Date());
@@ -782,10 +787,31 @@ export class Orchestrator {
       }),
     );
 
+    // The agent is told never to promise an ambulance. This is the gateway
+    // confirming, so it finally can.
+    const eta = session.state?.response_plan?.route?.eta_minutes;
+    void this.announce(
+      session,
+      `The dispatcher has approved. Help is on the way${
+        typeof eta === "number" ? `, about ${eta} minutes out` : ""
+      }. Stay on the line with me.`,
+    );
+
+    // Match the console's travel animation exactly, or the spoken "arriving
+    // now" lands while the ambulance is still halfway down the street.
+    const etaMinutes = session.state?.response_plan?.route?.eta_minutes;
+    const travelMs =
+      typeof etaMinutes === "number" && etaMinutes > 0
+        ? Math.min(
+            this.config.dispatchTravelMaxMs,
+            Math.max(this.config.dispatchTravelMinMs, etaMinutes * 60_000 * 0.1),
+          )
+        : this.config.dispatchTravelMs;
+
     const started = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - started;
-      const progress = Math.min(1, elapsed / this.config.dispatchTravelMs);
+      const progress = Math.min(1, elapsed / travelMs);
       this.publish(
         session,
         this.event(session, VIEW_EVENT.DispatchProgress, {
@@ -803,6 +829,10 @@ export class Orchestrator {
             incident_id: incidentId,
             unit_id: approval.unit_id,
           }),
+        );
+        void this.announce(
+          session,
+          `${approval.unit_id} is arriving now. Please make sure they can get to the patient.`,
         );
       }
     }, this.config.dispatchTickMs);
@@ -824,6 +854,22 @@ export class Orchestrator {
       }
     } else {
       session.fallbackStreak = 0;
+    }
+  }
+
+  /**
+   * Say something into the live call.
+   *
+   * Best effort by definition: there may be no phone call at all (the demo
+   * runner, the browser console), and a failed announcement must never take
+   * a call down or block a dispatch.
+   */
+  private async announce(session: Session, line: string): Promise<void> {
+    if (!this.announcer || !session.vapiControlUrl) return;
+    try {
+      await this.announcer.say(session, line);
+    } catch {
+      /* reported by the announcer */
     }
   }
 

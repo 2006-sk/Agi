@@ -11,6 +11,7 @@ import {
 import { SAFE_FALLBACK_LINE, type Orchestrator } from "../engine/orchestrator.js";
 import { runVapiTool, type ToolCall } from "../engine/vapiTools.js";
 import type { IntelligenceClient } from "../clients/intelligence.js";
+import { VapiCallControl, type CallAnnouncer } from "../clients/vapiControl.js";
 import type { Session, SessionStore } from "../session/store.js";
 
 export interface VapiDeps {
@@ -18,6 +19,7 @@ export interface VapiDeps {
   orchestrator: Orchestrator;
   intelligence: IntelligenceClient;
   config: GatewayConfig;
+  announcer?: CallAnnouncer;
 }
 
 /**
@@ -108,6 +110,8 @@ function streamCompletion(reply: FastifyReply, content: string, model: string): 
 
 export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<void> {
   const { store, orchestrator, intelligence, config } = deps;
+  const control =
+    config.vapiPrivateKey ? new VapiCallControl(config.vapiPrivateKey, 5000, app.log) : null;
   const MODEL = "echo-protocol";
 
   function authorized(request: FastifyRequest): boolean {
@@ -355,6 +359,20 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
         session.caller_number = call.customer?.number ?? session.caller_number;
         session.channel = "phone";
         session.activeCallId = callId;
+
+        // The control socket is how the gateway speaks into this call later,
+        // when the dispatcher approves and when the ambulance arrives. Vapi
+        // usually sends it on this webhook; if not, look it up once now rather
+        // than at the moment it is needed.
+        const monitor = (call as { monitor?: { controlUrl?: string } }).monitor;
+        session.vapiControlUrl = monitor?.controlUrl ?? null;
+        if (!session.vapiControlUrl && control) {
+          void control.controlUrlFor(callId).then((url) => {
+            session.vapiControlUrl = url;
+            request.log.info({ call_id: callId, found: Boolean(url) }, "resolved vapi control url");
+          });
+        }
+
         orchestrator.openCall(session);
         request.log.info(
           { session_id: sessionId, call_id: callId, from: session.caller_number },
@@ -364,6 +382,7 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
         const session = store.get(sessionId);
         if (session) {
           session.activeCallId = null;
+          session.vapiControlUrl = null;
           orchestrator.endCall(session, String(message.endedReason ?? "completed"));
         }
       }

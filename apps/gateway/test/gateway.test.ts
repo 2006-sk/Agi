@@ -21,7 +21,15 @@ async function start(fakeOptions = {}) {
     intelligence,
     voice,
     logger: false,
-    config: { ...baseConfig, emitViewEvents: true, dispatchTravelMs: 300, dispatchTickMs: 60, degradeAfterFallbacks: 2 },
+    config: {
+      ...baseConfig,
+      emitViewEvents: true,
+      dispatchTravelMs: 300,
+      dispatchTravelMinMs: 80,
+      dispatchTravelMaxMs: 300,
+      dispatchTickMs: 60,
+      degradeAfterFallbacks: 2,
+    },
   });
   await gateway.app.listen({ port: 0, host: "127.0.0.1" });
   const address = gateway.app.server.address();

@@ -4,6 +4,7 @@ import { buildGateway, type EchoGateway } from "../src/app.js";
 import { NullVoiceClient } from "../src/clients/voice.js";
 import { config as baseConfig } from "../src/config.js";
 import { FakeGis } from "./helpers/fakeGis.js";
+import { NullCallAnnouncer } from "../src/clients/vapiControl.js";
 
 /**
  * Vapi mode: the agent is the brain, ECHO keeps the gate.
@@ -20,12 +21,15 @@ import { FakeGis } from "./helpers/fakeGis.js";
 
 let gateway: EchoGateway;
 let intelligence: FakeGis;
+let announcer: NullCallAnnouncer;
 let baseUrl: string;
 
 async function start(overrides: Partial<typeof baseConfig> = {}) {
   intelligence = new FakeGis();
+  announcer = new NullCallAnnouncer();
   gateway = await buildGateway({
     intelligence,
+    announcer,
     voice: new NullVoiceClient(),
     logger: false,
     config: {
@@ -35,6 +39,8 @@ async function start(overrides: Partial<typeof baseConfig> = {}) {
       vapiSessionId: "call_id",
       vapiSecret: "",
       dispatchTravelMs: 200,
+      dispatchTravelMinMs: 80,
+      dispatchTravelMaxMs: 300,
       dispatchTickMs: 50,
       ...overrides,
     },
@@ -248,6 +254,94 @@ describe("the human gate cannot be talked around", () => {
 /* ------------------------------------------------------------------ */
 /* The deck                                                            */
 /* ------------------------------------------------------------------ */
+
+describe("telling the caller what happened to them", () => {
+  /**
+   * Dispatch is the one thing that happens *to* a call rather than in answer
+   * to it. Without these the caller listens to an agent that has no idea help
+   * was sent — the single thing they actually want to hear.
+   */
+  async function toTheGate(call: string) {
+    // A control url stands in for a live phone call.
+    await fetch(`${baseUrl}/vapi/webhook`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          type: "status-update",
+          status: "in-progress",
+          call: { id: call, monitor: { controlUrl: "https://control.test/abc" } },
+        },
+      }),
+    });
+    await agentTool(call, "update_incident", { category: "medical", priority: "critical", breathing: "no" });
+    await agentTool(call, "verify_address", { address: "170 St. Germain Avenue" });
+    await agentTool(call, "find_units", { service: "EMS" });
+    await agentTool(call, "request_dispatch", { reason: "cardiac arrest" });
+  }
+
+  it("says nothing to the caller before a human decides", async () => {
+    await toTheGate("quiet");
+    expect(announcer.said).toHaveLength(0);
+  });
+
+  it("tells the caller the moment the dispatcher approves", async () => {
+    await toTheGate("approved");
+    const session = gateway.store.get("vapi_approved")!;
+    await fetch(`${baseUrl}/api/calls/vapi_approved/approval`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ approved: true, reviewer: "dispatcher" }),
+    });
+
+    const line = announcer.said[0] ?? "";
+    expect(line).toMatch(/on the way/i);
+    expect(line).toMatch(/minutes/i);
+    expect(session.vapiControlUrl).toBe("https://control.test/abc");
+  });
+
+  it("tells the caller when the unit is on scene", async () => {
+    await toTheGate("onscene");
+    await fetch(`${baseUrl}/api/calls/vapi_onscene/approval`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ approved: true, reviewer: "dispatcher" }),
+    });
+    // The run is bounded to a few hundred ms in tests.
+    await new Promise((r) => setTimeout(r, 700));
+
+    const arrival = announcer.said.find((l) => /arriving now/i.test(l));
+    expect(arrival, announcer.said.join(" | ")).toBeTruthy();
+    expect(arrival).toContain("M-20");
+  });
+
+  it("says nothing when the dispatcher rejects", async () => {
+    await toTheGate("rejected");
+    await fetch(`${baseUrl}/api/calls/vapi_rejected/approval`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ approved: false, reviewer: "dispatcher" }),
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    expect(announcer.said).toHaveLength(0);
+  });
+
+  it("does not try to speak when there is no phone call", async () => {
+    // The demo runner and the browser console have nobody on a line.
+    const call = "nocontrol";
+    await agentTool(call, "update_incident", { category: "medical", priority: "critical", breathing: "no" });
+    await agentTool(call, "verify_address", { address: "170 St. Germain Avenue" });
+    await agentTool(call, "find_units", { service: "EMS" });
+    await agentTool(call, "request_dispatch", { reason: "cardiac arrest" });
+    await fetch(`${baseUrl}/api/calls/vapi_${call}/approval`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ approved: true }),
+    });
+    await new Promise((r) => setTimeout(r, 500));
+    expect(announcer.said).toHaveLength(0);
+  });
+});
 
 describe("the transcript", () => {
   /** Post a Vapi server message the way Vapi does. */

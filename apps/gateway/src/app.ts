@@ -5,6 +5,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { EventHub } from "./bus/hub.js";
 import { HttpIntelligenceClient, type IntelligenceClient } from "./clients/intelligence.js";
 import { HttpVoiceClient, type VoiceClient } from "./clients/voice.js";
+import { NullCallAnnouncer, VapiCallControl, type CallAnnouncer } from "./clients/vapiControl.js";
 import { config as defaultConfig, type GatewayConfig } from "./config.js";
 import { Orchestrator } from "./engine/orchestrator.js";
 import { callRoutes } from "./routes/calls.js";
@@ -18,6 +19,7 @@ import { SessionStore } from "./session/store.js";
 
 export interface BuildOptions {
   config?: GatewayConfig;
+  announcer?: CallAnnouncer;
   intelligence?: IntelligenceClient;
   voice?: VoiceClient;
   store?: SessionStore;
@@ -72,11 +74,16 @@ export async function buildGateway(options: BuildOptions = {}): Promise<EchoGate
       app.log.warn({ op, err: error.message }, "voice call failed");
     });
 
+  const announcer =
+    options.announcer ??
+    (config.vapiPrivateKey ? new VapiCallControl(config.vapiPrivateKey, 5000, app.log) : new NullCallAnnouncer());
+
   const orchestrator = new Orchestrator({
     store,
     hub,
     intelligence,
     voice,
+    announcer,
     config,
     logger: app.log,
   });
@@ -87,7 +94,7 @@ export async function buildGateway(options: BuildOptions = {}): Promise<EchoGate
   await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator, demoSessionId: config.vapiSessionId }));
   await app.register(consoleRoutes);
   await app.register(async (scope) => twilioRoutes(scope, { store, orchestrator, config }));
-  await app.register(async (scope) => vapiRoutes(scope, { store, orchestrator, intelligence, config }));
+  await app.register(async (scope) => vapiRoutes(scope, { store, orchestrator, intelligence, config, announcer }));
 
   return { app, store, hub, orchestrator, config };
 }

@@ -59,6 +59,8 @@ export interface Session {
    * closes it and the next phrase gets the next number.
    */
   utteranceSeq: { caller: number; agent: number };
+  /** Vapi's per-call control socket, for speaking into a live call. */
+  vapiControlUrl: string | null;
 }
 
 /** The frontend's call/incident ids are derived from the session id, not invented. */
@@ -129,6 +131,7 @@ export class SessionStore {
       demo: null,
       activeCallId: null,
       utteranceSeq: { caller: 1, agent: 1 },
+      vapiControlUrl: null,
     };
     this.sessions.set(sessionId, session);
     return session;

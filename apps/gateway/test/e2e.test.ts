@@ -95,6 +95,8 @@ beforeAll(async () => {
       emitViewEvents: true,
       intelligenceUrl: INTELLIGENCE_URL,
       dispatchTravelMs: 400,
+      dispatchTravelMinMs: 80,
+      dispatchTravelMaxMs: 300,
       dispatchTickMs: 80,
     },
   });

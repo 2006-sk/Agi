@@ -47,6 +47,8 @@ async function start(overrides: Partial<typeof baseConfig> = {}) {
       twilioVoice: "Polly.Joanna-Neural",
       publicBaseUrl: "",
       dispatchTravelMs: 300,
+      dispatchTravelMinMs: 80,
+      dispatchTravelMaxMs: 300,
       dispatchTickMs: 60,
       ...overrides,
     },

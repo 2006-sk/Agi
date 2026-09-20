@@ -18,7 +18,15 @@ export interface GatewayConfig {
   analyzeTimeoutMs: number;
   voiceTimeoutMs: number;
   degradeAfterFallbacks: number;
+  /** Fallback travel time when a route carries no ETA. */
   dispatchTravelMs: number;
+  /**
+   * Bounds on the simulated run, matching the console's own animation
+   * (`clamp(eta_minutes * 6000, min, max)`). If these drift apart, the spoken
+   * "arriving now" lands while the ambulance is still mid-street on screen.
+   */
+  dispatchTravelMinMs: number;
+  dispatchTravelMaxMs: number;
   dispatchTickMs: number;
   approvalTimeoutS: number;
   twilioAccountSid: string;
@@ -68,6 +76,8 @@ export const config: GatewayConfig = {
   voiceTimeoutMs: int("VOICE_TIMEOUT_MS", 4000),
   degradeAfterFallbacks: int("DEGRADE_AFTER_FALLBACKS", 2),
   dispatchTravelMs: int("DISPATCH_TRAVEL_MS", 9000),
+  dispatchTravelMinMs: int("DISPATCH_TRAVEL_MIN_MS", 12000),
+  dispatchTravelMaxMs: int("DISPATCH_TRAVEL_MAX_MS", 30000),
   dispatchTickMs: int("DISPATCH_TICK_MS", 300),
   approvalTimeoutS: int("APPROVAL_TIMEOUT_S", 120),
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID ?? "",
