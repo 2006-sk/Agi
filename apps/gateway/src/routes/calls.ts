@@ -97,6 +97,26 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
     });
   });
 
+  /**
+   * Every live call.
+   *
+   * The console uses this to attach to a call that is already in progress —
+   * an inbound phone call creates a session without anyone touching the UI,
+   * and without this the dashboard stays blank while someone is talking.
+   */
+  app.get("/api/calls", async () => ({
+    sessions: store.list().map((s) => ({
+      session_id: s.session_id,
+      status: s.status,
+      channel: s.channel,
+      caller_number: s.caller_number,
+      created_at: s.created_at,
+      sequence: s.sequence,
+      priority: s.state?.priority ?? "unknown",
+      category: s.state?.category ?? "unknown",
+    })),
+  }));
+
   /** Current combined state plus enough log metadata to debug a bad run. */
   app.get("/api/calls/:session_id", async (request, reply) => {
     const { session_id: sessionId } = request.params as { session_id: string };

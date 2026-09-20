@@ -24,6 +24,7 @@ export class GatewayTransport implements Transport {
   private onEvents: ((events: TypedEvent[]) => void) | null = null;
   private onStatus: ((status: ConnectionStatus) => void) | null = null;
   private sockets = new Map<string, WebSocket>();
+  private attachTimer: ReturnType<typeof setInterval> | null = null;
   private queue: TypedEvent[] = [];
   private scheduled = false;
   private closed = false;
@@ -36,13 +37,33 @@ export class GatewayTransport implements Transport {
     this.onEvents = onEvents;
     this.onStatus = onStatus;
     this.closed = false;
-    // nothing to stream until a call exists; the UI can create one
     setTimeout(() => onStatus("open"), 0);
+
+    // Attach to whatever is already live, and keep watching for new calls.
+    // An inbound phone call creates a session with nobody touching the UI; if
+    // the console only subscribed to calls it created itself, the dashboard
+    // would sit blank while someone was talking to the agent.
+    void this.attachToLiveCalls();
+    this.attachTimer = setInterval(() => void this.attachToLiveCalls(), 3000);
+
     return () => {
       this.closed = true;
+      if (this.attachTimer) clearInterval(this.attachTimer);
+      this.attachTimer = null;
       for (const socket of this.sockets.values()) socket.close();
       this.sockets.clear();
     };
+  }
+
+  /** Subscribe to every live call we are not already watching. */
+  private async attachToLiveCalls(): Promise<void> {
+    if (this.closed) return;
+    try {
+      const { sessions } = await this.request<{ sessions: { session_id: string }[] }>("GET", "/api/calls");
+      for (const s of sessions) this.subscribe(s.session_id);
+    } catch {
+      // The gateway may not be up yet; the next tick tries again.
+    }
   }
 
   async createCall(body: CreateCallBody = {}): Promise<{ session_id: string }> {

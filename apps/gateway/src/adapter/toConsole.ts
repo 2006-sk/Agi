@@ -115,6 +115,20 @@ export function toConsolePayload(
         escalation: payload.escalation === true,
       };
 
+    case "tool.started":
+      return { ...payload, tool: str(payload.tool), arguments: (payload.arguments ?? {}) as Payload };
+
+    case "tool.completed":
+      // `result` must be present even when a tool returns nothing: the console
+      // requires the key, and a missing one costs the whole event.
+      return {
+        ...payload,
+        tool: str(payload.tool),
+        result_summary: str(payload.result_summary),
+        result: payload.result === undefined ? null : payload.result,
+        duration_ms: num(payload.duration_ms),
+      };
+
     case "dispatch.proposed":
       return {
         ...payload,
