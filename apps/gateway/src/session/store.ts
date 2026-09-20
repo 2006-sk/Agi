@@ -42,6 +42,14 @@ export interface Session {
   dispatchTimer: NodeJS.Timeout | null;
   /** A scripted run waiting to be stepped, for presenter-driven demos. */
   demo: { script: { text: string; note: string }[]; cursor: number } | null;
+  /**
+   * The telephony call this session is currently showing.
+   *
+   * Providers re-send lifecycle webhooks — a retry, a duplicate, a status the
+   * spec says may repeat — and a session must only be wiped when the call
+   * genuinely changes. Resetting on every notice clears the board mid-call.
+   */
+  activeCallId: string | null;
 }
 
 /** The frontend's call/incident ids are derived from the session id, not invented. */
@@ -110,6 +118,7 @@ export class SessionStore {
       agentSpeaking: false,
       dispatchTimer: null,
       demo: null,
+      activeCallId: null,
     };
     this.sessions.set(sessionId, session);
     return session;

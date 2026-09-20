@@ -142,7 +142,7 @@ describe("inbound call", () => {
     expect(gateway.store.has("twilio_CAbbb")).toBe(true);
   });
 
-  it("starts a second call from a clean slate", async () => {
+  it("starts a genuinely new call from a clean slate", async () => {
     await twilioPost("/twilio/voice", { CallSid: CALL_SID, From: "+1408" });
     await twilioPost("/twilio/gather", {
       CallSid: CALL_SID,
@@ -151,10 +151,30 @@ describe("inbound call", () => {
     });
     expect(gateway.store.get(SESSION)!.state?.category).toBe("medical");
 
-    await twilioPost("/twilio/voice", { CallSid: CALL_SID, From: "+1408" });
+    // A different CallSid is a different caller.
+    await twilioPost("/twilio/voice", { CallSid: "CAsecondcall", From: "+1408" });
     const session = gateway.store.get(SESSION)!;
     expect(session.state).toBeNull();
     expect(session.log[0]?.sequence).toBe(1);
+  });
+
+  it("does not wipe a live call when Twilio repeats the webhook", async () => {
+    // Twilio retries this webhook when a response is slow. Treating a retry as
+    // a new call clears the board in the middle of the conversation.
+    await twilioPost("/twilio/voice", { CallSid: CALL_SID, From: "+1408" });
+    await twilioPost("/twilio/gather", {
+      CallSid: CALL_SID,
+      SpeechResult: "he has chest pain",
+      Confidence: "0.9",
+    });
+    const before = gateway.store.get(SESSION)!.sequence;
+
+    const repeat = await twilioPost("/twilio/voice", { CallSid: CALL_SID, From: "+1408" });
+    expect(repeat.status).toBe(200);
+
+    const session = gateway.store.get(SESSION)!;
+    expect(session.state?.category).toBe("medical");
+    expect(session.sequence).toBeGreaterThanOrEqual(before);
   });
 });
 

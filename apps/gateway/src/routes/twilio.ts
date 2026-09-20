@@ -126,9 +126,17 @@ export async function twilioRoutes(app: FastifyInstance, deps: TwilioDeps): Prom
     const callSid = body.CallSid ?? "unknown";
     const sessionId = sessionIdFor(callSid);
 
-    // A new phone call is a new incident: start from a clean slate so the deck
-    // is not showing the last caller's emergency.
-    const session = store.has(sessionId)
+    // A new phone call is a new incident. A repeat of the same one — Twilio
+    // retries this webhook when a response is slow — must not wipe a live call.
+    const current = store.get(sessionId);
+    if (current && current.activeCallId === callSid) {
+      request.log.info(
+        { session_id: sessionId, call_sid: callSid },
+        "twilio voice webhook repeated; keeping the incident",
+      );
+      return reply.type("text/xml").send(twiml(null));
+    }
+    const session = current
       ? orchestrator.reset(sessionId)
       : store.create({
           session_id: sessionId,
@@ -137,6 +145,7 @@ export async function twilioRoutes(app: FastifyInstance, deps: TwilioDeps): Prom
         });
     session.caller_number = body.From ?? session.caller_number;
     session.channel = "phone";
+    session.activeCallId = callSid;
     orchestrator.openCall(session);
 
     request.log.info({ session_id: sessionId, call_sid: callSid, from: body.From }, "inbound call");

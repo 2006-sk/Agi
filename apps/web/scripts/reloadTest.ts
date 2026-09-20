@@ -4,7 +4,6 @@
  * Between demo runs — and after a call is cut off half way — the console must
  * not come back showing the last caller's emergency.
  */
-import { GatewayTransport } from "../src/lib/gatewayTransport.ts";
 import type { TypedEvent } from "../src/contracts/index.ts";
 import { selectFocus, useEchoStore } from "../src/store/useEchoStore.ts";
 
@@ -18,11 +17,20 @@ const tool = (name: string, args: Record<string, unknown>) =>
 let fails = 0;
 const check = (l: string, ok: boolean, x?: unknown) => { if (!ok) { fails++; console.log("FAIL  " + l, x ?? ""); } else console.log("ok    " + l); };
 
-/** One page load. */
+/**
+ * One page load.
+ *
+ * The transport resets once per module instance, which in a browser means
+ * once per page load. A cache-busting import gives a genuinely fresh module
+ * here, so this models a reload rather than a remount.
+ */
+let loadCount = 0;
 async function load() {
+  loadCount += 1;
+  const mod = await import(`../src/lib/gatewayTransport.ts?load=${loadCount}`);
   const got: TypedEvent[] = [];
-  const t = new GatewayTransport(GW);
-  const stop = t.connect((evs) => got.push(...evs), () => {});
+  const t = new mod.GatewayTransport(GW);
+  const stop = t.connect((evs: TypedEvent[]) => got.push(...evs), () => {});
   await sleep(1400);
   return { got, stop };
 }
@@ -59,6 +67,24 @@ async function main() {
   check("no stale approval gate", !after?.approval);
   check("the board is still live, not dead", second.got.length > 0, second.got.length);
   second.stop();
+
+  console.log("\n--- a remount mid-call must NOT wipe the board ---");
+  // React mounts effects twice in development, and any remount calls connect()
+  // again. Resetting each time cleared the board mid-conversation.
+  const mod = await import("../src/lib/gatewayTransport.ts?load=2");
+  await post("/vapi/webhook", { message: { type: "status-update", status: "in-progress", call: { id: "RELOAD-2" } } });
+  await sleep(300);
+  await tool("update_incident", { category: "medical", priority: "critical", chief_complaint: "chest pain" });
+  await sleep(400);
+
+  const remounted: TypedEvent[] = [];
+  const again = new mod.GatewayTransport(GW);
+  const stopAgain = again.connect((evs: TypedEvent[]) => remounted.push(...evs), () => {});
+  await sleep(1400);
+
+  const live = await fetch(`${GW}/api/calls/echo-demo-0197`).then((r) => r.json());
+  check("the live call survived the remount", live.state?.priority === "critical", live.state?.priority);
+  stopAgain();
 
   console.log(`\n${fails === 0 ? "PASS" : "FAIL"} — ${fails} failing check(s)`);
   process.exit(fails === 0 ? 0 : 1);

@@ -335,17 +335,37 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
     if (type === "status-update") {
       const status = String(message.status ?? "");
       if (status === "in-progress") {
-        // A new phone call is a new incident; never show the last caller's.
-        const session = store.has(sessionId)
+        const callId = call.id ?? "unknown";
+        const current = store.get(sessionId);
+
+        // Vapi can send in-progress more than once for the same call. Wiping
+        // the board on a repeat throws away a live incident mid-conversation,
+        // so a new incident starts only when the call id actually changes.
+        if (current && current.activeCallId === callId) {
+          request.log.info(
+            { session_id: sessionId, call_id: callId },
+            "vapi in-progress repeated; keeping the incident",
+          );
+          return reply.send({ ok: true, ignored: "duplicate_in_progress" });
+        }
+
+        const session = current
           ? orchestrator.reset(sessionId)
           : store.create({ session_id: sessionId, channel: "phone" });
         session.caller_number = call.customer?.number ?? session.caller_number;
         session.channel = "phone";
+        session.activeCallId = callId;
         orchestrator.openCall(session);
-        request.log.info({ session_id: sessionId, from: session.caller_number }, "vapi call started");
+        request.log.info(
+          { session_id: sessionId, call_id: callId, from: session.caller_number },
+          "vapi call started",
+        );
       } else if (status === "ended") {
         const session = store.get(sessionId);
-        if (session) orchestrator.endCall(session, String(message.endedReason ?? "completed"));
+        if (session) {
+          session.activeCallId = null;
+          orchestrator.endCall(session, String(message.endedReason ?? "completed"));
+        }
       }
       return reply.send({ ok: true });
     }

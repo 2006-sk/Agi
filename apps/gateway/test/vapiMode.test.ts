@@ -440,25 +440,51 @@ describe("robustness", () => {
     expect(response.status).toBe(401);
   });
 
+  async function statusUpdate(callId: string, status: string) {
+    await fetch(`${baseUrl}/vapi/webhook`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: { type: "status-update", status, call: { id: callId } } }),
+    });
+  }
+
   it("starts a fresh incident when a new call arrives on the same line", async () => {
     await gateway.app.close();
     await start({ vapiSessionId: "echo-demo-0197" });
 
+    await statusUpdate("call-1", "in-progress");
     await agentTool("call-1", "update_incident", { category: "medical", priority: "critical" });
     expect(gateway.store.get("echo-demo-0197")!.state?.priority).toBe("critical");
 
-    // Vapi reports the next call starting on the same pinned session.
-    await fetch(`${baseUrl}/vapi/webhook`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        message: { type: "status-update", status: "in-progress", call: { id: "call-2" } },
-      }),
-    });
+    await statusUpdate("call-2", "in-progress");
 
     const session = gateway.store.get("echo-demo-0197")!;
     expect(session.state).toBeNull();
     expect(session.log[0]?.sequence).toBe(1);
     expect(session.approvals.size).toBe(0);
+  });
+
+  it("does not wipe a live call when Vapi repeats in-progress", async () => {
+    // This is what cleared the board mid-conversation: providers re-send
+    // lifecycle webhooks, and every notice was being treated as a new call.
+    await gateway.app.close();
+    await start({ vapiSessionId: "echo-demo-0197" });
+
+    await statusUpdate("call-1", "in-progress");
+    await agentTool("call-1", "update_incident", {
+      category: "medical",
+      priority: "critical",
+      breathing: "no",
+    });
+    await agentTool("call-1", "verify_address", { address: "170 St. Germain Avenue" });
+    const before = gateway.store.get("echo-demo-0197")!.state;
+    expect(before?.priority).toBe("critical");
+
+    await statusUpdate("call-1", "in-progress");
+    await statusUpdate("call-1", "in-progress");
+
+    const session = gateway.store.get("echo-demo-0197")!;
+    expect(session.state?.priority).toBe("critical");
+    expect(session.state?.location.verified).toBe(true);
   });
 });

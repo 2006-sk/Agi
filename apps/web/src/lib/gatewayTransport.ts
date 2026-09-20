@@ -16,6 +16,15 @@ export class ApiError extends Error {
  * `WS /ws/calls/{id}` per call; the additive routes (`/demo/advance`,
  * `/agent/done`, `/api/demo/reset`) are best-effort and ignored when absent.
  */
+/**
+ * One reset per page load, not per connect().
+ *
+ * React mounts effects twice in development, and any remount calls connect()
+ * again. Resetting each time would wipe a call that is already in progress —
+ * the board clearing itself mid-conversation for no visible reason.
+ */
+let didResetThisLoad = false;
+
 export class GatewayTransport implements Transport {
   readonly kind = "gateway" as const;
   readonly label: string;
@@ -51,7 +60,10 @@ export class GatewayTransport implements Transport {
     // console only subscribed to calls it created itself, the dashboard would
     // sit blank while someone was talking to the agent.
     void (async () => {
-      if (!keep) await this.reset().catch(() => undefined);
+      if (!keep && !didResetThisLoad) {
+        didResetThisLoad = true;
+        await this.reset().catch(() => undefined);
+      }
       await this.attachToLiveCalls();
     })();
     this.attachTimer = setInterval(() => void this.attachToLiveCalls(), 3000);
