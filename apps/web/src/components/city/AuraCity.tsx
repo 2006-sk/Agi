@@ -61,7 +61,7 @@ export default function AuraCity() {
       flat
       dpr={[1, 1.75]}
       gl={{ antialias: true, powerPreference: "high-performance" }}
-      camera={{ fov: 42, near: 1, far: 700, position: [-39.6, 47.6, 36] }}
+      camera={{ fov: 51, near: 1.5, far: 1200, position: [104.2, 44.2, 4.1] }}
       onCreated={({ gl }) => {
         gl.setClearColor(palette.void, 1);
       }}
