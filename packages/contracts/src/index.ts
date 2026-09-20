@@ -62,6 +62,10 @@ export const CANON_EVENT = {
   ApprovalRequested: "approval.requested",
   ApprovalResolved: "approval.resolved",
   SystemDegraded: "system.degraded",
+  /** Additive: the console shows the model working, and a demo restart. */
+  AnalysisStarted: "analysis.started",
+  AnalysisCompleted: "analysis.completed",
+  SystemReset: "system.reset",
 } as const;
 
 export type CanonEventType = (typeof CANON_EVENT)[keyof typeof CANON_EVENT];

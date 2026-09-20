@@ -16,6 +16,7 @@ import {
   routeIdFor,
   type ProjectionState,
 } from "../adapter/toFrontend.js";
+import { toConsolePayload } from "../adapter/toConsole.js";
 import {
   IntelligenceError,
   type IntelligenceClient,
@@ -129,7 +130,17 @@ export class Orchestrator {
    * and the deck's finer-grained view always trails the fact it came from.
    */
   publish(session: Session, event: UnsequencedEvent): AuraEvent[] {
-    const sealed = this.store.append(session, event);
+    // The console validates every frame and silently drops what fails, so the
+    // payload is put in its shape before it is sealed into the log.
+    const shaped: UnsequencedEvent = {
+      ...event,
+      payload: toConsolePayload(event.type, event.payload ?? {}, {
+        createdAt: session.created_at,
+        turnId: session.latestTurn ?? "turn_0",
+        now: this.now().toISOString(),
+      }),
+    };
+    const sealed = this.store.append(session, shaped);
     this.hub.broadcast(session.session_id, sealed);
     const out: AuraEvent[] = [sealed];
 
@@ -139,6 +150,8 @@ export class Orchestrator {
       this.projection(session),
     );
     this.projections.set(session.session_id, state);
+
+    if (!this.config.emitViewEvents) return out;
 
     for (const derived of events) {
       // A name shared by both vocabularies was already delivered above; emitting
@@ -192,13 +205,16 @@ export class Orchestrator {
         incidentIdFor(session.session_id),
       ),
     );
-    this.publish(
-      session,
-      this.event(session, VIEW_EVENT.SessionStarted, {
-        session_id: session.session_id,
-        city: opts.city ?? "Bayside",
-      }),
-    );
+    // A deck-vocabulary event: the console does not know it and would drop it.
+    if (this.config.emitViewEvents) {
+      this.publish(
+        session,
+        this.event(session, VIEW_EVENT.SessionStarted, {
+          session_id: session.session_id,
+          city: opts.city ?? "Bayside",
+        }),
+      );
+    }
     this.publish(
       session,
       this.event(session, CANON_EVENT.CallStarted, {
@@ -228,6 +244,15 @@ export class Orchestrator {
   }
 
   reset(sessionId: string): Session {
+    const previous = this.store.get(sessionId);
+    // Announce the wipe on the old session before the log is thrown away: a
+    // deck that is already connected has no other way to know it happened.
+    if (previous) {
+      this.publish(
+        previous,
+        this.event(previous, CANON_EVENT.SystemReset, { reason: "demo_reset" }),
+      );
+    }
     const fresh = this.store.reset(sessionId);
     this.projections.delete(sessionId);
     this.queue.clear(sessionId);
@@ -329,6 +354,17 @@ export class Orchestrator {
       );
     }
 
+    // The console draws a "reasoning" state off these; without them the deck
+    // sits still for the whole model round-trip and looks frozen.
+    const utteranceId = `utt_${session.turnCounter}`;
+    this.publish(
+      session,
+      this.event(session, CANON_EVENT.AnalysisStarted, {
+        utterance_id: utteranceId,
+        text: input.text,
+      }),
+    );
+
     let replyText = SAFE_FALLBACK_LINE;
     try {
       const response = await this.intelligence.analyze({
@@ -348,6 +384,21 @@ export class Orchestrator {
       }
 
       this.trackDegradation(session, response.meta.source);
+
+      this.publish(
+        session,
+        this.event(session, CANON_EVENT.AnalysisCompleted, {
+          utterance_id: utteranceId,
+          confidence: response.confidence,
+          explanation: response.explanation,
+          next_response: response.next_response,
+          protocol_transition: response.protocol_transition,
+          proposed_tools: response.proposed_tools,
+          meta: response.meta,
+          degraded: response.meta.source === "fallback",
+        }),
+      );
+
       this.maybeRaiseApproval(session, response);
 
       replyText = response.next_response || SAFE_FALLBACK_LINE;
@@ -375,6 +426,28 @@ export class Orchestrator {
         "analysis failed",
       );
       this.degrade(session, "intelligence", "scripted_fallback");
+      this.publish(
+        session,
+        this.event(session, CANON_EVENT.AnalysisCompleted, {
+          utterance_id: utteranceId,
+          confidence: 0,
+          explanation: "The intelligence service could not be reached.",
+          next_response: replyText,
+          protocol_transition: null,
+          proposed_tools: [],
+          meta: {
+            model: "none",
+            model_latency_ms: null,
+            source: "none",
+            validation: "fallback",
+            attempts: 1,
+            triggers_matched: [],
+            rejected: [],
+            total_latency_ms: 0,
+          },
+          degraded: true,
+        }),
+      );
     }
 
     // A turn that has been overtaken must not speak: its answer belongs to a

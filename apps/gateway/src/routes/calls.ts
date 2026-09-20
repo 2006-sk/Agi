@@ -8,6 +8,8 @@ import { callIdFor, incidentIdFor, type SessionStore } from "../session/store.js
 export interface CallRouteDeps {
   store: SessionStore;
   orchestrator: Orchestrator;
+  /** The session the console and inbound calls share, unless one is named. */
+  demoSessionId?: string;
 }
 
 const CreateCall = z.object({
@@ -26,15 +28,33 @@ const Utterance = z.object({
   source: z.enum(["voice", "text", "demo", "operator"]).optional().default("voice"),
 });
 
-const Approval = z.object({
-  approval_id: z.string().optional(),
-  approved: z.boolean(),
-  reviewer: z.string().optional(),
-  reason: z.string().optional(),
-});
+const Approval = z
+  .object({
+    approval_id: z.string().optional(),
+    /** The console's name for the same thing. */
+    action_id: z.string().optional(),
+    approved: z.boolean(),
+    reviewer: z.string().optional(),
+    reason: z.string().optional(),
+    /** The console's name for the same thing. */
+    note: z.string().optional(),
+  })
+  .transform((b) => ({
+    approval_id: b.approval_id ?? b.action_id,
+    approved: b.approved,
+    reviewer: b.reviewer,
+    reason: b.reason ?? b.note,
+  }));
 
 const Demo = z.object({
-  scenario: z.enum(["cardiac", "vague"]).optional().default("cardiac"),
+  // Liberal on purpose: the console sends a scenario name plus presenter
+  // settings, and an unrecognised scenario should fall back rather than 400.
+  scenario: z.string().optional().default("cardiac"),
+  /** "manual" stages the script and waits for /demo/advance. */
+  mode: z.enum(["auto", "manual"]).optional().default("auto"),
+  /** Multiplier on the scripted pauses; 0 or 1 leaves them as authored. */
+  pace: z.number().optional().default(1),
+  ambient: z.boolean().optional().default(false),
   /** Wait for the whole script before responding. Used by the e2e tests. */
   await_completion: z.boolean().optional().default(false),
   /** Collapse the scripted pauses; the model latency is the real pacing anyway. */
@@ -58,8 +78,13 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
     }
-    const existing = parsed.data.session_id ? store.get(parsed.data.session_id) : undefined;
-    const session = existing ?? store.create(parsed.data);
+    // With no id supplied, adopt the pinned demo session so the console, the
+    // scripted demo and an inbound phone call all share one incident.
+    const requested =
+      parsed.data.session_id ??
+      (deps.demoSessionId && deps.demoSessionId !== "call_id" ? deps.demoSessionId : undefined);
+    const existing = requested ? store.get(requested) : undefined;
+    const session = existing ?? store.create({ ...parsed.data, session_id: requested });
     if (!existing) orchestrator.openCall(session, { city: parsed.data.city });
 
     return reply.code(existing ? 200 : 201).send({
@@ -174,6 +199,20 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
     orchestrator.openCall(session);
 
     const script = parsed.data.scenario === "vague" ? VAGUE_SCRIPT : CARDIAC_SCRIPT;
+
+    // Manual mode stages the script and hands control to the presenter; the
+    // console steps it with /demo/advance.
+    if (parsed.data.mode === "manual") {
+      session.demo = { script: script.map((l) => ({ text: l.text, note: l.note })), cursor: 0 };
+      return reply.code(202).send({
+        session_id: sessionId,
+        scenario: parsed.data.scenario,
+        status: "staged",
+        mode: "manual",
+        lines: script.length,
+      });
+    }
+
     const run = playScript(orchestrator, session, script, parsed.data.fast);
 
     if (parsed.data.await_completion) {
@@ -198,6 +237,55 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
     });
   });
 
+  /**
+   * Step a staged demo by one caller line. The console drives this from the
+   * presenter console so a person can pace the story to the room.
+   */
+  app.post("/api/calls/:session_id/demo/advance", async (request, reply) => {
+    const { session_id: sessionId } = request.params as { session_id: string };
+    const session = store.get(sessionId);
+    if (!session) return reply.code(404).send({ error: "unknown_session" });
+    if (!session.demo) return reply.code(409).send({ error: "no_staged_demo" });
+
+    const line = session.demo.script[session.demo.cursor];
+    if (!line) return reply.send({ session_id: sessionId, status: "finished", remaining: 0 });
+
+    session.demo.cursor += 1;
+    const result = await orchestrator.submitUtterance(session, {
+      text: line.text,
+      speaker: "caller",
+      language: "en",
+      source: "demo",
+    });
+    return reply.send({
+      session_id: sessionId,
+      status: "advanced",
+      spoke: line.text,
+      note: line.note,
+      reply_text: result.reply_text,
+      remaining: session.demo.script.length - session.demo.cursor,
+    });
+  });
+
+  /**
+   * The console telling us its text-to-speech finished.
+   *
+   * It matters for barge-in: while AURA has the floor, a new caller utterance
+   * cancels it. Without this the floor would never be given back.
+   */
+  app.post("/api/calls/:session_id/agent/done", async (request, reply) => {
+    const { session_id: sessionId } = request.params as { session_id: string };
+    const session = store.get(sessionId);
+    if (!session) return reply.code(404).send({ error: "unknown_session" });
+    session.agentSpeaking = false;
+    const body = (request.body ?? {}) as { utterance_id?: string };
+    orchestrator.publishRaw(session, {
+      type: "agent.speaking",
+      payload: { text: "", active: false, utterance_id: body.utterance_id ?? null },
+    });
+    return reply.send({ session_id: sessionId, status: "idle" });
+  });
+
   /** Wipe a session back to its opening state, keeping the id and the socket. */
   app.post("/api/calls/:session_id/reset", async (request, reply) => {
     const { session_id: sessionId } = request.params as { session_id: string };
@@ -205,6 +293,19 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
     const session = orchestrator.reset(sessionId);
     orchestrator.openCall(session);
     return reply.send({ session_id: sessionId, status: "reset", sequence: session.sequence });
+  });
+
+  /**
+   * Reset every session. The presenter console's restart button: the demo gets
+   * run over and over and must never show the last run's incident.
+   */
+  app.post("/api/demo/reset", async (_request, reply) => {
+    const ids = store.list().map((s) => s.session_id);
+    for (const id of ids) {
+      const fresh = orchestrator.reset(id);
+      orchestrator.openCall(fresh);
+    }
+    return reply.send({ status: "reset", sessions: ids });
   });
 
   app.post("/api/calls/:session_id/end", async (request, reply) => {

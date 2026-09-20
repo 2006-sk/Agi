@@ -49,6 +49,13 @@ export interface GatewayConfig {
    *           and the human gate.
    */
   voiceBrain: "aura" | "vapi";
+  /**
+   * Also broadcast the derived view vocabulary (`fact.extracted`,
+   * `route.proposed`, ...). The command center validates against the canonical
+   * contract and drops anything else, so this is off by default; it exists for
+   * a deck built against the finer-grained vocabulary.
+   */
+  emitViewEvents: boolean;
 }
 
 export const config: GatewayConfig = {
@@ -84,4 +91,5 @@ export const config: GatewayConfig = {
     process.env.VAPI_GREETING ??
     "Emergency services. This line is answered by an AI assistant with a human dispatcher supervising. Tell me what is happening and where you are.",
   voiceBrain: process.env.VOICE_BRAIN === "vapi" ? "vapi" : "aura",
+  emitViewEvents: process.env.EMIT_VIEW_EVENTS === "true",
 };

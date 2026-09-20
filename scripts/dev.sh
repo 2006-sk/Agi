@@ -85,14 +85,14 @@ fi
 if [ "$WITH_WEB" = "1" ]; then
   npm --prefix apps/web run dev > logs/web.log 2>&1 &
   PIDS+=($!)
-  wait_for "web" "http://localhost:3000" logs/web.log 80
+  wait_for "console" "http://localhost:5173" logs/web.log 80
 fi
 
 echo ""
 echo "  voice console  http://localhost:8000/voice   (browser mic fallback)"
 echo "  gateway        http://localhost:8000/health"
 echo "  run demo       ./scripts/demo.sh"
-echo "  deck           http://localhost:3000  (start separately: npm --prefix apps/web run dev)"
+echo "  command center http://localhost:5173  (--web, or: npm --prefix apps/web run dev)"
 echo "  logs           logs/*.log"
 echo ""
 echo "${DIM}Ctrl-C stops everything.${OFF}"

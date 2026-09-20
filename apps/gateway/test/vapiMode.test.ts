@@ -30,6 +30,7 @@ async function start(overrides: Partial<typeof baseConfig> = {}) {
     logger: false,
     config: {
       ...baseConfig,
+      emitViewEvents: true,
       voiceBrain: "vapi",
       vapiSessionId: "call_id",
       vapiSecret: "",

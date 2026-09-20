@@ -41,6 +41,7 @@ async function start(overrides: Partial<typeof baseConfig> = {}) {
     logger: false,
     config: {
       ...baseConfig,
+      emitViewEvents: true,
       twilioAuthToken: "",
       twilioSessionId: SESSION,
       twilioVoice: "Polly.Joanna-Neural",

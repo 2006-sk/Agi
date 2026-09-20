@@ -82,7 +82,7 @@ export async function buildGateway(options: BuildOptions = {}): Promise<AuraGate
   });
 
   await app.register(async (scope) => healthRoutes(scope, { store, hub, intelligence, voice }));
-  await app.register(async (scope) => callRoutes(scope, { store, orchestrator }));
+  await app.register(async (scope) => callRoutes(scope, { store, orchestrator, demoSessionId: config.vapiSessionId }));
   await app.register(async (scope) => voiceEventRoutes(scope, { store, orchestrator }));
   await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator }));
   await app.register(consoleRoutes);

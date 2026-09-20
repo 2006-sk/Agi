@@ -40,6 +40,8 @@ export interface Session {
   agentSpeaking: boolean;
   /** Cleared on reset so a re-run of the demo cannot animate a stale dispatch. */
   dispatchTimer: NodeJS.Timeout | null;
+  /** A scripted run waiting to be stepped, for presenter-driven demos. */
+  demo: { script: { text: string; note: string }[]; cursor: number } | null;
 }
 
 /** The frontend's call/incident ids are derived from the session id, not invented. */
@@ -107,6 +109,7 @@ export class SessionStore {
       degraded: false,
       agentSpeaking: false,
       dispatchTimer: null,
+      demo: null,
     };
     this.sessions.set(sessionId, session);
     return session;

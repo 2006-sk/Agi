@@ -92,6 +92,7 @@ beforeAll(async () => {
     intelligence: new HttpIntelligenceClient(INTELLIGENCE_URL, LIVE ? 20000 : 9000),
     config: {
       ...baseConfig,
+      emitViewEvents: true,
       intelligenceUrl: INTELLIGENCE_URL,
       dispatchTravelMs: 400,
       dispatchTickMs: 80,
