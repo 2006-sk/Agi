@@ -14,6 +14,7 @@ them in bash heredocs is how you end up debugging quoting at 2am.
 """
 
 import json
+import os
 import sys
 
 FIRST_MESSAGE = (
@@ -121,6 +122,36 @@ def tools(base):
     ]
 
 
+def speech_plans():
+    """
+    How easily the caller can cut ECHO off.
+
+    Vapi stops the assistant the moment it hears the caller, which on a live
+    phone line means room noise, a cough or an "okay" chops the sentence in
+    half. `numWords` is the guard: the caller has to say that many words
+    before ECHO yields.
+
+    The default of 3 is a deliberate middle. One- and two-word noises no
+    longer interrupt, so ECHO finishes its questions — but "he stopped
+    breathing" is three words and still cuts straight through, which is the
+    one interruption the whole demo is built around.
+
+    Set VAPI_STOP_NUM_WORDS=10 to make it effectively uninterruptible, or 0
+    to have it yield to any sound at all.
+    """
+    return (
+        {
+            # Do not jump in on a mid-sentence pause while someone is panicking.
+            "waitSeconds": float(os.environ.get("VAPI_START_WAIT_SECONDS", "0.6")),
+        },
+        {
+            "numWords": int(os.environ.get("VAPI_STOP_NUM_WORDS", "3")),
+            "voiceSeconds": float(os.environ.get("VAPI_STOP_VOICE_SECONDS", "0.4")),
+            "backoffSeconds": float(os.environ.get("VAPI_STOP_BACKOFF_SECONDS", "1.5")),
+        },
+    )
+
+
 def build(mode, base, ws_base, secret, voice_id):
     server = {"url": f"{base}/vapi/webhook"}
     if secret:
@@ -135,6 +166,10 @@ def build(mode, base, ws_base, secret, voice_id):
         "silenceTimeoutSeconds": 30,
         "maxDurationSeconds": 600,
     }
+
+    start_plan, stop_plan = speech_plans()
+    payload["startSpeakingPlan"] = start_plan
+    payload["stopSpeakingPlan"] = stop_plan
 
     if mode == "vapi":
         # Vapi owns speech and reasoning; ECHO is reached through tools.
