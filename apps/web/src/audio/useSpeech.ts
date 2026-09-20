@@ -17,7 +17,7 @@ interface SpeakOptions {
 }
 
 /**
- * Plays AURA's lines (and optionally the caller's) with the browser's speech
+ * Plays ECHO's lines (and optionally the caller's) with the browser's speech
  * synthesis, standing in for Gradium TTS. Acks playback back to the gateway so
  * the conductor paces the conversation to the real audio.
  */

@@ -33,7 +33,7 @@ export function TopBar() {
             <span className="absolute inset-[6px] rounded-full bg-aura shadow-[0_0_14px_#22d3ee]" />
           </div>
           <div className="leading-none">
-            <div className="font-display font-semibold tracking-[0.32em] text-[15px]">AURA</div>
+            <div className="font-display font-semibold tracking-[0.32em] text-[15px]">ECHO</div>
             <div className="label mt-1">command center / overflow intake</div>
           </div>
         </div>

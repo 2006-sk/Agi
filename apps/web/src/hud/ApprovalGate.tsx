@@ -74,7 +74,7 @@ export function ApprovalGate() {
                 ))}
               </div>
               <div className="flex flex-col gap-1.5 min-w-[170px]">
-                <span className="label">on approval, AURA runs</span>
+                <span className="label">on approval, ECHO runs</span>
                 {payload.proposed_tools.map((t) => (
                   <div key={t.name} className="rounded-md border border-white/[0.08] px-2 py-1.5" title={t.reason}>
                     <div className="mono text-[11px] text-emerald-300">{t.name}</div>
@@ -108,7 +108,7 @@ export function ApprovalGate() {
               </div>
             ) : (
               <div className={`mono text-[11px] ${approval.resolved.approved ? "text-emerald-300" : "text-red-300"}`}>
-                {approval.resolved.approved ? "CAD draft created. Units notified. AURA is coaching the caller until arrival." : "Held. Incident remains awaiting approval; nothing was dispatched."}
+                {approval.resolved.approved ? "CAD draft created. Units notified. ECHO is coaching the caller until arrival." : "Held. Incident remains awaiting approval; nothing was dispatched."}
               </div>
             )}
           </div>

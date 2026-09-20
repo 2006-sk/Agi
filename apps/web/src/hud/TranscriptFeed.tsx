@@ -30,7 +30,7 @@ function Bubble({ item, speaking }: { item: TranscriptItem; speaking: boolean })
       className={`flex flex-col gap-1 max-w-[92%] ${agent ? "self-end items-end" : "self-start items-start"}`}
     >
       <div className="flex items-center gap-2">
-        <span className={`label ${agent ? "!text-aura" : "!text-white/55"}`}>{agent ? "AURA" : "caller"}</span>
+        <span className={`label ${agent ? "!text-aura" : "!text-white/55"}`}>{agent ? "ECHO" : "caller"}</span>
         {!agent && <span className="mono text-[9.5px] text-white/35">stt {pct(item.confidence)}</span>}
         {!agent && item.analysisConfidence !== null && <span className="mono text-[9.5px] text-aura/70">understood {pct(item.analysisConfidence)}</span>}
         {item.interrupted && (
@@ -83,7 +83,7 @@ export function TranscriptFeed() {
           <div className="mono text-[11px] text-white/35 m-auto text-center leading-relaxed">
             Transcript appears here as Gradium finalizes speech.
             <br />
-            AURA replies come only from approved protocol templates.
+            ECHO replies come only from approved protocol templates.
           </div>
         )}
         <AnimatePresence initial={false}>
@@ -104,7 +104,7 @@ export function TranscriptFeed() {
           )}
           {analyzing && (
             <motion.div key="analyzing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="self-end flex items-center gap-2 pr-1">
-              <span className="mono text-[10.5px] shimmer-text tracking-[0.12em]">AURA REASONING / SAMBANOVA VIA GENERAL COMPUTE</span>
+              <span className="mono text-[10.5px] shimmer-text tracking-[0.12em]">ECHO REASONING / SAMBANOVA VIA GENERAL COMPUTE</span>
               <span className="flex gap-1">
                 {[0, 1, 2].map((i) => (
                   <motion.span key={i} className="w-1 h-1 rounded-full bg-aura" animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.18 }} />

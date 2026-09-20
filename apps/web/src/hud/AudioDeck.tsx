@@ -79,7 +79,7 @@ export function AudioDeck() {
   }, []);
 
   const statusLabel =
-    status === "aura" ? "AURA SPEAKING" : status === "caller" ? "CALLER SPEAKING" : status === "reasoning" ? "REASONING" : status === "listening" ? "LISTENING" : "STANDBY";
+    status === "aura" ? "ECHO SPEAKING" : status === "caller" ? "CALLER SPEAKING" : status === "reasoning" ? "REASONING" : status === "listening" ? "LISTENING" : "STANDBY";
   const statusColor = status === "aura" ? "#22d3ee" : status === "caller" ? "#f5f5f4" : status === "reasoning" ? "#a78bfa" : "#64748b";
 
   return (
@@ -91,7 +91,7 @@ export function AudioDeck() {
       </div>
       <div className="absolute right-3 top-2 flex items-center gap-2">
         <span className="label !text-white/25">Gradium TTS</span>
-        <span className="label !text-aura">AURA</span>
+        <span className="label !text-aura">ECHO</span>
         <Dot color="#22d3ee" pulse={status === "aura"} size={6} />
       </div>
       <canvas ref={canvas} className="absolute inset-x-0 top-6 bottom-6 w-full h-[calc(100%-48px)]" />

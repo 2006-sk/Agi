@@ -1,6 +1,6 @@
-# AURA Command Center (frontend)
+# ECHO Command Center (frontend)
 
-Black 3D city command center for the AURA demo: live incident card, protocol tree with escalation jumps, Gradium-style transcript with barge-in, tool-call trace, waveform deck, human approval gate, ambulance routing.
+Black 3D city command center for the ECHO demo: live incident card, protocol tree with escalation jumps, Gradium-style transcript with barge-in, tool-call trace, waveform deck, human approval gate, ambulance routing.
 
 ## Run
 
@@ -28,7 +28,7 @@ src/lib/         transport interface, gateway transport, geo projection, colours
 src/store/       zustand store: applyEvents reducer, cues for camera/audio side effects
 src/scene/       react-three-fiber city, beacons, stations, routes, ambulance, camera director, bloom
 src/hud/         panels: top bar, roster, incident, protocol tree, transcript, tool log, audio deck, approval gate, console
-src/audio/       browser speech synthesis (AURA + caller voices) and synthesized SFX
+src/audio/       browser speech synthesis (ECHO + caller voices) and synthesized SFX
 ```
 
 The HUD is designed for 1920x1080 and scales down uniformly on smaller screens. Voices use the browser's speech synthesis as a stand-in for Gradium TTS.

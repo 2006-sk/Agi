@@ -33,7 +33,7 @@ export function Standby() {
                 animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
                 transition={{ duration: 2.6, repeat: Infinity, ease: "easeOut", delay: 1.3 }}
               />
-              <h1 className="font-display font-semibold text-[88px] leading-none tracking-[0.42em] pl-[0.42em] text-white drop-shadow-[0_0_40px_rgba(34,211,238,0.45)]">AURA</h1>
+              <h1 className="font-display font-semibold text-[88px] leading-none tracking-[0.42em] pl-[0.42em] text-white drop-shadow-[0_0_40px_rgba(34,211,238,0.45)]">ECHO</h1>
             </div>
             <div className="flex flex-col items-center gap-1.5">
               <p className="mono text-[12px] tracking-[0.3em] text-aura uppercase">human-supervised emergency intake</p>

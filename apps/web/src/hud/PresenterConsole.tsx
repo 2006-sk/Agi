@@ -112,7 +112,7 @@ export function PresenterConsole() {
             </div>
 
             <div className="flex items-center gap-4 flex-wrap">
-              <Toggle label="AURA voice" value={settings.ttsAura} onChange={(v) => update({ ttsAura: v })} />
+              <Toggle label="ECHO voice" value={settings.ttsAura} onChange={(v) => update({ ttsAura: v })} />
               <Toggle label="caller voice" value={settings.ttsCaller} onChange={(v) => update({ ttsCaller: v })} />
               <Toggle label="sfx" value={settings.sfx} onChange={(v) => update({ sfx: v })} />
               <Toggle label="camera follow" value={settings.follow} onChange={(v) => update({ follow: v })} />

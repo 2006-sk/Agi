@@ -2,7 +2,7 @@
   "name": "aura-web",
   "version": "0.1.0",
   "private": true,
-  "description": "AURA command center frontend: black 3D city, live incident panels, protocol tree, transcript, approval gate. Runs on a built-in mock event stream or against the team gateway.",
+  "description": "ECHO command center frontend: black 3D city, live incident panels, protocol tree, transcript, approval gate. Runs on a built-in mock event stream or against the team gateway.",
   "type": "module",
   "engines": {
     "node": ">=22"
