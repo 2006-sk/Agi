@@ -356,9 +356,14 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
       const role = message.role === "assistant" ? "echo" : "caller";
       const text = String(message.transcript ?? "").trim();
       const isPartial = String(message.transcriptType ?? "partial") !== "final";
-      // Caller finals arrive through the completions endpoint; taking them here
-      // too would put the same sentence on the deck twice.
-      if (text && (isPartial || role === "echo")) {
+      // Who publishes the caller's final line depends on which brain is running.
+      // In echo mode the completions endpoint does it, so taking it here too
+      // would print the sentence twice. In vapi mode that endpoint is never
+      // called — Vapi's own model is the brain — so if this drops the final,
+      // nothing publishes it and the transcript panel stays empty for the
+      // whole call.
+      const callerFinalsAreOurs = config.voiceBrain === "vapi";
+      if (text && (isPartial || role === "echo" || callerFinalsAreOurs)) {
         orchestrator.publishRaw(session, {
           type: isPartial ? CANON_EVENT.TranscriptPartial : CANON_EVENT.TranscriptFinal,
           payload: { speaker: role, text, confidence: 0.9, language: "en" },

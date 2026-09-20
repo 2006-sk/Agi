@@ -249,6 +249,68 @@ describe("the human gate cannot be talked around", () => {
 /* The deck                                                            */
 /* ------------------------------------------------------------------ */
 
+describe("the transcript", () => {
+  /** Post a Vapi server message the way Vapi does. */
+  async function webhook(message: Record<string, unknown>) {
+    await fetch(`${baseUrl}/vapi/webhook`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+  }
+
+  it("puts the caller's words on the deck", async () => {
+    // In vapi mode the completions endpoint is never called, so if the webhook
+    // drops caller finals nothing publishes them and the panel stays empty for
+    // the entire call.
+    const call = "transcript";
+    await agentTool(call, "update_incident", { category: "medical" });
+    await webhook({
+      type: "transcript",
+      transcriptType: "final",
+      role: "user",
+      transcript: "my father is clutching his chest",
+      call: { id: call },
+    });
+
+    const lines = sessionOf(call)!.log.filter(
+      (e) => e.type === "transcript.final" && e.payload.speaker === "caller",
+    );
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.payload.text).toBe("my father is clutching his chest");
+  });
+
+  it("puts what the agent said on the deck too", async () => {
+    const call = "agentline";
+    await agentTool(call, "update_incident", { category: "medical" });
+    await webhook({
+      type: "transcript",
+      transcriptType: "final",
+      role: "assistant",
+      transcript: "What is the address of the emergency?",
+      call: { id: call },
+    });
+
+    const line = sessionOf(call)!.log.find(
+      (e) => e.type === "transcript.final" && e.payload.speaker === "agent",
+    );
+    expect(line?.payload.text).toBe("What is the address of the emergency?");
+  });
+
+  it("shows partials while the caller is still talking", async () => {
+    const call = "partials";
+    await agentTool(call, "update_incident", { category: "medical" });
+    await webhook({
+      type: "transcript",
+      transcriptType: "partial",
+      role: "user",
+      transcript: "my father is",
+      call: { id: call },
+    });
+    expect(sessionOf(call)!.log.some((e) => e.type === "transcript.partial")).toBe(true);
+  });
+});
+
 describe("the deck updates live from agent tool calls", () => {
   it("turns each tool call into rail and incident events", async () => {
     const call = "deck";
