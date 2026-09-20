@@ -1,8 +1,8 @@
 {
-  "name": "aura-gateway",
+  "name": "echo-gateway",
   "version": "0.1.0",
   "private": true,
-  "description": "AURA integration gateway: session state, event bus, WebSockets, approval gate, fallbacks",
+  "description": "ECHO integration gateway: session state, event bus, WebSockets, approval gate, fallbacks",
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {

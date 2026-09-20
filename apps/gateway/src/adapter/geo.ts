@@ -9,7 +9,7 @@
  * city edge so a far-away unit is visible at the rim instead of vanishing.
  */
 
-import type { Vec2 } from "@aura/contracts";
+import type { Vec2 } from "@echo/contracts";
 
 /** `170 St Germain Ave` — the demo address, from the intelligence geocode table. */
 export const ANCHOR_LAT = 37.754;

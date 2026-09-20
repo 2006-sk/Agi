@@ -23,7 +23,7 @@ const CreateCall = z.object({
 
 const Utterance = z.object({
   text: z.string().min(1),
-  speaker: z.enum(["caller", "aura"]).optional().default("caller"),
+  speaker: z.enum(["caller", "echo"]).optional().default("caller"),
   language: z.string().optional().default("en"),
   source: z.enum(["voice", "text", "demo", "operator"]).optional().default("voice"),
 });
@@ -152,7 +152,7 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
   });
 
   /**
-   * Submit a finalized caller utterance and get AURA's approved reply.
+   * Submit a finalized caller utterance and get ECHO's approved reply.
    *
    * Synchronous by contract: the voice service awaits this body and speaks
    * `reply_text` itself, so the whole turn has to complete inside the request.
@@ -290,7 +290,7 @@ export async function callRoutes(app: FastifyInstance, deps: CallRouteDeps): Pro
   /**
    * The console telling us its text-to-speech finished.
    *
-   * It matters for barge-in: while AURA has the floor, a new caller utterance
+   * It matters for barge-in: while ECHO has the floor, a new caller utterance
    * cancels it. Without this the floor would never be given back.
    */
   app.post("/api/calls/:session_id/agent/done", async (request, reply) => {

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# Point the Vapi number at AURA, in one of two modes.
+# Point the Vapi number at ECHO, in one of two modes.
 #
 #   ./scripts/vapi-setup.sh vapi    Vapi runs the call: its own STT, model and
-#                                   TTS. It reaches AURA through agent tools,
+#                                   TTS. It reaches ECHO through agent tools,
 #                                   which move the incident and light the deck.
-#                                   The human approval gate still lives in AURA.
+#                                   The human approval gate still lives in ECHO.
 #
-#   ./scripts/vapi-setup.sh aura    Vapi is carriage only: Gradium does STT and
+#   ./scripts/vapi-setup.sh echo    Vapi is carriage only: Gradium does STT and
 #                                   TTS, and the deterministic protocol machine
 #                                   writes every word that gets spoken.
 #
@@ -24,7 +24,7 @@ ENV_FILE="$ROOT/apps/gateway/.env"
 get() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2- || true; }
 
 MODE="${1:-$(get VOICE_BRAIN)}"
-MODE="${MODE:-aura}"
+MODE="${MODE:-echo}"
 KEY="$(get VAPI_PRIVATE_KEY)"
 NUMBER_ID="$(get VAPI_PHONE_NUMBER_ID)"
 ASSISTANT_ID="$(get VAPI_ASSISTANT_ID)"
@@ -35,7 +35,7 @@ VOICE_ID="$(get VAPI_TTS_VOICE_ID)"; VOICE_ID="${VOICE_ID:-luna}"
 [ -n "$KEY" ]       || { echo "VAPI_PRIVATE_KEY not set" >&2; exit 1; }
 [ -n "$NUMBER_ID" ] || { echo "VAPI_PHONE_NUMBER_ID not set" >&2; exit 1; }
 [ -n "$BASE" ]      || { echo "PUBLIC_BASE_URL not set — run ./scripts/tunnel.sh first" >&2; exit 1; }
-case "$MODE" in vapi|aura) ;; *) echo "mode must be 'vapi' or 'aura'" >&2; exit 2 ;; esac
+case "$MODE" in vapi|echo) ;; *) echo "mode must be 'vapi' or 'echo'" >&2; exit 2 ;; esac
 
 WS_BASE="${BASE/https:/wss:}"; WS_BASE="${WS_BASE/http:/ws:}"
 
@@ -47,7 +47,7 @@ echo
 if [ "$MODE" = "vapi" ]; then
   PAYLOAD="$(python3 "$ROOT/scripts/vapi_payload.py" vapi "$BASE" "$WS_BASE" "$SECRET" "$VOICE_ID")"
 else
-  PAYLOAD="$(python3 "$ROOT/scripts/vapi_payload.py" aura "$BASE" "$WS_BASE" "$SECRET" "$VOICE_ID")"
+  PAYLOAD="$(python3 "$ROOT/scripts/vapi_payload.py" echo "$BASE" "$WS_BASE" "$SECRET" "$VOICE_ID")"
 fi
 
 if [ -n "$ASSISTANT_ID" ]; then

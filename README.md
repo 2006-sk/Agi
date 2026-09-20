@@ -1,8 +1,8 @@
-# AURA — Emergency Response Command Surface
+# ECHO — Emergency Response Command Surface
 
-The frontend for AURA: a live 911 call, rendered as a command centre rather than a
+The frontend for ECHO: a live 911 call, rendered as a command centre rather than a
 dashboard. A 3D city carries the incident, the call stack carries the people, the
-right column carries what AURA knows and why, and the bottom rail carries what it is
+right column carries what ECHO knows and why, and the bottom rail carries what it is
 doing — ending at a human approval gate that nothing gets past on its own.
 
 ```
@@ -17,12 +17,12 @@ npm run build
 
 ```
 src/
-├── types/events.ts          the AuraEvent envelope + the event taxonomy
-├── state/auraStore.ts       ALL UI state. applyEvent() is the only way it changes.
+├── types/events.ts          the EchoEvent envelope + the event taxonomy
+├── state/echoStore.ts       ALL UI state. applyEvent() is the only way it changes.
 ├── lib/cityLayout.ts        deterministic city geometry + street routing
 ├── lib/tokens.ts            semantic colour, easing, duration
-├── hooks/useAuraSocket.ts   /ws/calls/{session_id} client
-├── hooks/useAuraFeed.ts     the mock ⇄ live switch
+├── hooks/useEchoSocket.ts   /ws/calls/{session_id} client
+├── hooks/useEchoFeed.ts     the mock ⇄ live switch
 ├── demo/mockEvents.ts       the scripted medical scenario
 ├── demo/mockPlayer.ts       virtual-clock player that stops dead at the approval gate
 └── components/
@@ -42,7 +42,7 @@ The frontend connects **only** to Shresth's gateway. It never calls Gradium, Pip
 SambaNova or any other upstream service directly.
 
 ```ts
-type AuraEvent = {
+type EchoEvent = {
   event_id: string;
   session_id: string;
   type: string;
@@ -52,7 +52,7 @@ type AuraEvent = {
 };
 ```
 
-Every event — mock or live — enters through one function, `auraStore.applyEvent`:
+Every event — mock or live — enters through one function, `echoStore.applyEvent`:
 
 - **Duplicates** are ignored by `event_id`.
 - **Ordering** is by `sequence`. An event older than the last applied one is dropped, so
@@ -79,10 +79,10 @@ Payload shapes are in `src/types/events.ts`. Anything outside this list is safel
 ### Going live
 
 ```bash
-NEXT_PUBLIC_AURA_WS_URL=ws://localhost:8000 npm run dev
+NEXT_PUBLIC_ECHO_WS_URL=ws://localhost:8000 npm run dev
 ```
 
-That is the whole of milestone 2. `useAuraFeed` stops creating the mock player and
+That is the whole of milestone 2. `useEchoFeed` stops creating the mock player and
 opens `ws://localhost:8000/ws/calls/{session_id}` instead. No visual component changes,
 because no visual component knows where events come from.
 

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { pct } from "../lib/format.ts";
-import { selectFocus, useAuraStore, type ToolCall } from "../store/useAuraStore.ts";
+import { selectFocus, useEchoStore, type ToolCall } from "../store/useEchoStore.ts";
 import { Chip, Panel } from "./ui.tsx";
 
 const CONSEQUENTIAL = new Set(["create_cad_draft", "request_specialist"]);
@@ -22,7 +22,7 @@ function ToolRow({ tool }: { tool: ToolCall }) {
     <motion.li layout initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex gap-2.5 py-1.5 border-b hairline last:border-0">
       <span className="mt-[3px] shrink-0 w-3.5 h-3.5 flex items-center justify-center">
         {tool.status === "running" ? (
-          <span className="w-3 h-3 rounded-full border-[1.5px] border-aura/30 border-t-aura animate-spin" />
+          <span className="w-3 h-3 rounded-full border-[1.5px] border-echo/30 border-t-echo animate-spin" />
         ) : tool.status === "done" ? (
           <svg width="14" height="14" viewBox="0 0 14 14">
             <path d="M3 7.5l2.5 2.5L11 4.5" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -53,7 +53,7 @@ function ToolRow({ tool }: { tool: ToolCall }) {
 }
 
 export function ToolLog() {
-  const focus = useAuraStore(selectFocus);
+  const focus = useEchoStore(selectFocus);
   const tools = focus?.tools ?? [];
   const analysis = focus?.analysis ?? null;
   const scroller = useRef<HTMLDivElement>(null);

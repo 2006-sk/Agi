@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 
-import type { AuraEvent } from "@aura/contracts";
-import { buildGateway, type AuraGateway } from "../src/app.js";
+import type { EchoEvent } from "@echo/contracts";
+import { buildGateway, type EchoGateway } from "../src/app.js";
 import { NullVoiceClient } from "../src/clients/voice.js";
 import { config as baseConfig } from "../src/config.js";
 import { FakeIntelligence } from "./helpers/fakeIntelligence.js";
 
-const SESSION = "aura-demo-0197";
+const SESSION = "echo-demo-0197";
 
-let gateway: AuraGateway;
+let gateway: EchoGateway;
 let intelligence: FakeIntelligence;
 let voice: NullVoiceClient;
 let baseUrl: string;
@@ -48,7 +48,7 @@ async function get(path: string) {
 
 /** Collect frames from a deck socket until `settle` ms pass with no new frame. */
 function collect(port: number, sessionId = SESSION) {
-  const received: AuraEvent[] = [];
+  const received: EchoEvent[] = [];
   const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/calls/${sessionId}`);
   socket.on("message", (data) => received.push(JSON.parse(data.toString())));
   const open = new Promise<void>((resolve, reject) => {
@@ -72,7 +72,7 @@ function collect(port: number, sessionId = SESSION) {
   };
 }
 
-function typesOf(events: AuraEvent[]): string[] {
+function typesOf(events: EchoEvent[]): string[] {
   return events.map((e) => e.type);
 }
 
@@ -452,7 +452,7 @@ describe("turn handling", () => {
     expect(gateway.store.has("walk-in")).toBe(true);
   });
 
-  it("cancels AURA's speech when the caller barges in", async () => {
+  it("cancels ECHO's speech when the caller barges in", async () => {
     await post("/api/calls", { session_id: SESSION });
     const session = gateway.store.get(SESSION)!;
     await post("/internal/voice-events", {
@@ -490,8 +490,8 @@ describe("voice fan-in", () => {
       payload: { text: "What is the address?", active: true },
     });
     const log = gateway.store.get(SESSION)!.log;
-    const aura = log.find((e) => e.type === "transcript.final" && e.payload.speaker === "aura");
-    expect(aura?.payload.text).toBe("What is the address?");
+    const echo = log.find((e) => e.type === "transcript.final" && e.payload.speaker === "echo");
+    expect(echo?.payload.text).toBe("What is the address?");
   });
 
   it("refuses an event type the voice service has no business sending", async () => {

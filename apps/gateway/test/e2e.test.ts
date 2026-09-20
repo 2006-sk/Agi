@@ -17,8 +17,8 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 
-import type { AuraEvent } from "@aura/contracts";
-import { buildGateway, type AuraGateway } from "../src/app.js";
+import type { EchoEvent } from "@echo/contracts";
+import { buildGateway, type EchoGateway } from "../src/app.js";
 import { HttpIntelligenceClient } from "../src/clients/intelligence.js";
 import { NullVoiceClient } from "../src/clients/voice.js";
 import { config as baseConfig } from "../src/config.js";
@@ -26,12 +26,12 @@ import { config as baseConfig } from "../src/config.js";
 const LIVE = process.env.LIVE_MODEL_E2E === "1";
 const INTELLIGENCE_PORT = 8391;
 const INTELLIGENCE_URL = `http://127.0.0.1:${INTELLIGENCE_PORT}`;
-const SESSION = "aura-demo-0197";
+const SESSION = "echo-demo-0197";
 
 const serviceDir = fileURLToPath(new URL("../../../services/intelligence", import.meta.url));
 
 let child: ChildProcess;
-let gateway: AuraGateway;
+let gateway: EchoGateway;
 let voice: NullVoiceClient;
 let baseUrl: string;
 let port: number;
@@ -62,7 +62,7 @@ async function post(path: string, body: unknown = {}) {
   return { status: response.status, body: text ? JSON.parse(text) : null };
 }
 
-function typesOf(events: AuraEvent[]): string[] {
+function typesOf(events: EchoEvent[]): string[] {
   return events.map((e) => e.type);
 }
 
@@ -118,7 +118,7 @@ describe("service wiring", () => {
       intelligence: { ok: boolean; detail: { service: string } };
     };
     expect(body.intelligence.ok).toBe(true);
-    expect(body.intelligence.detail.service).toBe("aura-intelligence");
+    expect(body.intelligence.detail.service).toBe("echo-intelligence");
   });
 });
 
@@ -257,7 +257,7 @@ describe("the approval gate is real", () => {
       fast: true,
     });
 
-    const received: AuraEvent[] = [];
+    const received: EchoEvent[] = [];
     const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/calls/${SESSION}`);
     socket.on("message", (data) => received.push(JSON.parse(data.toString())));
     await new Promise((resolve, reject) => {
@@ -309,7 +309,7 @@ describe("reconnect and replay", () => {
     });
     const log = gateway.store.get(SESSION)!.log;
 
-    const received: AuraEvent[] = [];
+    const received: EchoEvent[] = [];
     const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/calls/${SESSION}`);
     socket.on("message", (data) => received.push(JSON.parse(data.toString())));
     await new Promise((resolve, reject) => {

@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@aura/contracts": fileURLToPath(
+      "@echo/contracts": fileURLToPath(
         new URL("../../packages/contracts/src/index.ts", import.meta.url),
       ),
     },

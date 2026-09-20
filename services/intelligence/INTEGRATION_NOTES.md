@@ -49,8 +49,8 @@ Things to know when wiring `services/intelligence` (Pranay) into the gateway (Sh
 
 ## Voice (Aditya)
 
-- `next_response` is the only text AURA should speak. It comes from approved protocol templates, never from the model. Feed it to `/internal/speak` as-is.
-- If a new `transcript.final` arrives while AURA is speaking (barge-in), the gateway should still pass the previous `state`; the service knows what was asked via `protocol.last_prompt` and will interpret "no" / "yeah" against that question.
+- `next_response` is the only text ECHO should speak. It comes from approved protocol templates, never from the model. Feed it to `/internal/speak` as-is.
+- If a new `transcript.final` arrives while ECHO is speaking (barge-in), the gateway should still pass the previous `state`; the service knows what was asked via `protocol.last_prompt` and will interpret "no" / "yeah" against that question.
 - `conversation_summary` is optional context for the model. Passing the concatenated `explanation` strings of previous turns works well.
 
 ## Latency and failure behaviour

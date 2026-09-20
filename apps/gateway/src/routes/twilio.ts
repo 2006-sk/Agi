@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
-import { CANON_EVENT } from "@aura/contracts";
+import { CANON_EVENT } from "@echo/contracts";
 import type { GatewayConfig } from "../config.js";
 import type { Orchestrator } from "../engine/orchestrator.js";
 import { callIdFor, type SessionStore } from "../session/store.js";
@@ -13,7 +13,7 @@ export interface TwilioDeps {
 }
 
 /**
- * Inbound telephony: a real phone call into AURA.
+ * Inbound telephony: a real phone call into ECHO.
  *
  * Twilio handles both halves of the audio loop — `<Gather input="speech">` is
  * the STT and `<Say>` is the TTS — so the whole conversation runs over PSTN with

@@ -8,7 +8,7 @@
 #   ./scripts/demo.sh cardiac approve  # also approve, to see the unit move
 set -uo pipefail
 
-SESSION="${AURA_SESSION:-aura-demo-0197}"
+SESSION="${ECHO_SESSION:-echo-demo-0197}"
 SCENARIO="${1:-cardiac}"
 APPROVE="${2:-}"
 GW="http://localhost:8000"

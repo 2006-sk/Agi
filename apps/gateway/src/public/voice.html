@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AURA Voice Console</title>
+    <title>ECHO Voice Console</title>
     <style>
       :root {
         --bg: #05070c;
@@ -57,7 +57,7 @@
       .line:last-child { border-bottom: 0; }
       .who { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); }
       .caller .who { color: var(--caller); }
-      .aura .who { color: var(--accent); }
+      .echo .who { color: var(--accent); }
       .partial { opacity: 0.5; font-style: italic; }
       .pill {
         display: inline-block; padding: 2px 8px; border-radius: 999px;
@@ -75,7 +75,7 @@
   </head>
   <body>
     <main>
-      <h1>AURA Voice Console</h1>
+      <h1>ECHO Voice Console</h1>
       <p class="sub">Browser microphone fallback — talks to the gateway exactly like the Pipecat service does.</p>
 
       <div class="warn">
@@ -85,7 +85,7 @@
       </div>
 
       <div class="row">
-        <input id="session" value="aura-demo-0197" spellcheck="false" />
+        <input id="session" value="echo-demo-0197" spellcheck="false" />
         <button id="mic" class="primary">Start mic</button>
         <button id="demo">Run demo script</button>
         <button id="reset">Reset</button>
@@ -142,7 +142,7 @@
        */
       const $ = (id) => document.getElementById(id);
       const sessionInput = $("session");
-      const sessionId = () => sessionInput.value.trim() || "aura-demo-0197";
+      const sessionId = () => sessionInput.value.trim() || "echo-demo-0197";
 
       let socket = null;
       let recognition = null;
@@ -254,7 +254,7 @@
           setPill("p-step", "step: —", false);
         }
 
-        if (evt.type === "transcript.final" && p.speaker === "aura") addLine("aura", p.text, false);
+        if (evt.type === "transcript.final" && p.speaker === "echo") addLine("echo", p.text, false);
 
         if (evt.type === "incident.updated") {
           renderIncident(p);
@@ -273,7 +273,7 @@
           pendingApproval = null;
         }
         if (evt.type === "system.degraded") {
-          addLine("aura", `[degraded: ${p.failed_dependency} → ${p.fallback_mode}]`, false);
+          addLine("echo", `[degraded: ${p.failed_dependency} → ${p.fallback_mode}]`, false);
         }
       }
 
@@ -343,7 +343,7 @@
             for (const v of buf) sum += (v - 128) ** 2;
             const level = Math.min(1, Math.sqrt(sum / buf.length) / 40);
             $("level").style.width = `${Math.round(level * 100)}%`;
-            emit("audio.level", { level: Number(level.toFixed(3)), speaker: speaking ? "aura" : "caller" });
+            emit("audio.level", { level: Number(level.toFixed(3)), speaker: speaking ? "echo" : "caller" });
           }, 66);
         } catch (err) {
           console.warn("level meter unavailable", err);
@@ -372,7 +372,7 @@
               emit("transcript.partial", {
                 speaker: "caller", text, confidence: result[0].confidence || 0.5, language: "en",
               });
-              // Barge-in: real words while AURA talks cut it off immediately.
+              // Barge-in: real words while ECHO talks cut it off immediately.
               if (speaking && text.length >= 12) await cancelSpeech("barge_in");
               continue;
             }

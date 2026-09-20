@@ -29,7 +29,7 @@ import {
   type IncidentState,
   type Priority,
   type Vec2,
-} from "@aura/contracts";
+} from "@echo/contracts";
 
 import { kmToMetres, minutesToSeconds, polylineToPath, toVec2 } from "./geo.js";
 
@@ -151,7 +151,7 @@ export function project(
     }
 
     case "agent.speaking": {
-      // The deck has no `agent.speaking`; AURA's line belongs in the transcript.
+      // The deck has no `agent.speaking`; ECHO's line belongs in the transcript.
       if (payload.active === true) {
         const text = str(payload.text);
         if (text) {
@@ -160,7 +160,7 @@ export function project(
             payload: {
               call_id: state.callId,
               turn_id: str(payload.turn_id) || "agent",
-              speaker: "aura",
+              speaker: "echo",
               text,
             },
           });

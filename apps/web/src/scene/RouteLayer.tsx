@@ -6,7 +6,7 @@ import type { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { useShallow } from "zustand/react/shallow";
 import { serviceColor } from "../lib/colors.ts";
 import { project } from "../lib/geo.ts";
-import { selectSessionList, useAuraStore, type SessionView } from "../store/useAuraStore.ts";
+import { selectSessionList, useEchoStore, type SessionView } from "../store/useEchoStore.ts";
 
 const SAMPLES = 96;
 const DRAW_IN_MS = 1600;
@@ -172,7 +172,7 @@ function SessionRoute({ session }: { session: SessionView }) {
 }
 
 export function RouteLayer() {
-  const sessions = useAuraStore(useShallow(selectSessionList));
+  const sessions = useEchoStore(useShallow(selectSessionList));
   return (
     <>
       {sessions

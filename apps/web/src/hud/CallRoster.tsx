@@ -2,13 +2,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useShallow } from "zustand/react/shallow";
 import { CATEGORY_LABEL, priorityColor } from "../lib/colors.ts";
 import { humanize } from "../lib/format.ts";
-import { selectSessionList, useAuraStore } from "../store/useAuraStore.ts";
+import { selectSessionList, useEchoStore } from "../store/useEchoStore.ts";
 import { Dot, Panel } from "./ui.tsx";
 
 export function CallRoster() {
-  const sessions = useAuraStore(useShallow(selectSessionList));
-  const focusId = useAuraStore((s) => s.focusId);
-  const focus = useAuraStore((s) => s.focus);
+  const sessions = useEchoStore(useShallow(selectSessionList));
+  const focusId = useEchoStore((s) => s.focusId);
+  const focus = useEchoStore((s) => s.focus);
   const sorted = [...sessions].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "focus" ? -1 : 1));
 
   return (
@@ -41,7 +41,7 @@ export function CallRoster() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[12px] text-white/90 truncate">{s.caller?.caller_label ?? s.id}</span>
-                  {s.kind === "focus" && <span className="label !text-aura">focus</span>}
+                  {s.kind === "focus" && <span className="label !text-echo">focus</span>}
                   {s.caller?.language && s.caller.language !== "en-US" && <span className="label">{s.caller.language}</span>}
                 </div>
                 <div className="mono text-[10px] text-white/45 truncate">

@@ -1,17 +1,17 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { buildGateway, type AuraGateway } from "../src/app.js";
+import { buildGateway, type EchoGateway } from "../src/app.js";
 import { NullVoiceClient } from "../src/clients/voice.js";
 import { config as baseConfig } from "../src/config.js";
 import { isValidTwilioSignature } from "../src/routes/twilio.js";
 import { FakeIntelligence } from "./helpers/fakeIntelligence.js";
 
-const SESSION = "aura-demo-0197";
+const SESSION = "echo-demo-0197";
 const CALL_SID = "CA0123456789abcdef";
 const AUTH_TOKEN = "test_auth_token";
 
-let gateway: AuraGateway;
+let gateway: EchoGateway;
 let intelligence: FakeIntelligence;
 let baseUrl: string;
 
@@ -178,7 +178,7 @@ describe("a caller turn", () => {
     expect(intelligence.analyzeCalls).toHaveLength(1);
   });
 
-  it("puts the caller's words and AURA's reply on the deck", async () => {
+  it("puts the caller's words and ECHO's reply on the deck", async () => {
     await twilioPost("/twilio/gather", {
       CallSid: CALL_SID,
       SpeechResult: "my father has chest pain",
@@ -186,10 +186,10 @@ describe("a caller turn", () => {
     });
     const log = gateway.store.get(SESSION)!.log;
     const caller = log.find((e) => e.type === "transcript.final" && e.payload.speaker === "caller");
-    const aura = log.find((e) => e.type === "transcript.final" && e.payload.speaker === "aura");
+    const echo = log.find((e) => e.type === "transcript.final" && e.payload.speaker === "echo");
     expect(caller?.payload.text).toBe("my father has chest pain");
     expect(caller?.payload.confidence).toBe(0.92);
-    expect(aura).toBeDefined();
+    expect(echo).toBeDefined();
   });
 
   it("publishes the caller's transcript exactly once", async () => {

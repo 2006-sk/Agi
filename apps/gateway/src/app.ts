@@ -24,7 +24,7 @@ export interface BuildOptions {
   logger?: boolean;
 }
 
-export interface AuraGateway {
+export interface EchoGateway {
   app: FastifyInstance;
   store: SessionStore;
   hub: EventHub;
@@ -39,7 +39,7 @@ export interface AuraGateway {
  * sequencing, approval gate, WebSocket fan-out — can be exercised in tests
  * without a model, a microphone or a network.
  */
-export async function buildGateway(options: BuildOptions = {}): Promise<AuraGateway> {
+export async function buildGateway(options: BuildOptions = {}): Promise<EchoGateway> {
   const config = options.config ?? defaultConfig;
   const app = Fastify({
     logger: options.logger === false ? false : { level: config.logLevel },

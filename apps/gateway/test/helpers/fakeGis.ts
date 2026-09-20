@@ -17,7 +17,7 @@ import type {
   ToolExecuteRequest,
   ToolExecuteResponse,
 } from "../../src/clients/intelligence.js";
-import type { IncidentState } from "@aura/contracts";
+import type { IncidentState } from "@echo/contracts";
 
 /** The demo address, plus a couple of neighbours, as in the real geocode table. */
 const GEOCODE: Record<string, { lat: number; lng: number }> = {

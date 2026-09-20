@@ -10,7 +10,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import type { AuraEvent, IncidentState } from "@aura/contracts";
+import type { EchoEvent, IncidentState } from "@echo/contracts";
 import {
   IntelligenceError,
   type AnalyzeRequest,
@@ -66,7 +66,7 @@ export function emptyState(sessionId: string): IncidentState {
   };
 }
 
-function event(sessionId: string, type: string, payload: Record<string, unknown>, sequence: number): AuraEvent {
+function event(sessionId: string, type: string, payload: Record<string, unknown>, sequence: number): EchoEvent {
   return {
     event_id: `evt_${randomUUID()}`,
     session_id: sessionId,
@@ -115,7 +115,7 @@ export class FakeIntelligence implements IntelligenceClient {
       session_id: body.session_id,
     };
     const text = body.utterance.toLowerCase();
-    const events: AuraEvent[] = [];
+    const events: EchoEvent[] = [];
     let sequence = 0;
     const emit = (type: string, payload: Record<string, unknown>) => {
       sequence += 1;
@@ -292,7 +292,7 @@ export class FakeIntelligence implements IntelligenceClient {
     }
 
     const state = { ...(body.current_state as unknown as IncidentState) };
-    const events: AuraEvent[] = [];
+    const events: EchoEvent[] = [];
     let sequence = 0;
     const emit = (type: string, payload: Record<string, unknown>) => {
       sequence += 1;

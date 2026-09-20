@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { CANON_EVENT, type IncidentState, type Priority, type Service } from "@aura/contracts";
+import { CANON_EVENT, type IncidentState, type Priority, type Service } from "@echo/contracts";
 
 import type { IntelligenceClient } from "../clients/intelligence.js";
 import type { Orchestrator } from "../engine/orchestrator.js";
@@ -9,7 +9,7 @@ import type { Session } from "../session/store.js";
 /**
  * Vapi mode: the agent is the brain.
  *
- * In the default AURA mode the deterministic protocol machine drives the call
+ * In the default ECHO mode the deterministic protocol machine drives the call
  * and Vapi is only a mouth and ears. In Vapi mode the agent's own model runs
  * the conversation and reaches back through these tools to move the incident.
  *
@@ -499,7 +499,7 @@ async function requestDispatch(
 }
 
 /** The system prompt the agent runs on in Vapi mode. */
-export const VAPI_SYSTEM_PROMPT = `You are AURA, an emergency call-intake assistant answering an overflow 911 line. A human dispatcher is supervising you and sees everything you record.
+export const VAPI_SYSTEM_PROMPT = `You are ECHO, an emergency call-intake assistant answering an overflow 911 line. A human dispatcher is supervising you and sees everything you record.
 
 Open by telling the caller they have reached emergency services and that you are an AI assistant with a human dispatcher supervising.
 

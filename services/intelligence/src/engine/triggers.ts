@@ -331,7 +331,7 @@ export function detectTriggers(utterance: string, ctx: TriggerContext = {}): Tri
     }
   }
 
-  // Short yes/no answers are interpreted against the question AURA just asked.
+  // Short yes/no answers are interpreted against the question ECHO just asked.
   if (ctx.step && ctx.lastPrompt) {
     const yes = YES.test(text);
     const no = !yes && NO.test(text);

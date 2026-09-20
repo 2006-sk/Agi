@@ -3,11 +3,11 @@ import { randomUUID } from "node:crypto";
 import {
   CANON_EVENT,
   VIEW_EVENT,
-  type AuraEvent,
+  type EchoEvent,
   type IncidentState,
   type UnsequencedEvent,
   type UtteranceReply,
-} from "@aura/contracts";
+} from "@echo/contracts";
 
 import type { GatewayConfig } from "../config.js";
 import {
@@ -57,7 +57,7 @@ export interface OrchestratorDeps {
 
 export interface UtteranceInput {
   text: string;
-  speaker: "caller" | "aura";
+  speaker: "caller" | "echo";
   language: string;
   source: "voice" | "text" | "demo" | "operator";
 }
@@ -66,7 +66,7 @@ export interface UtteranceInput {
  * The turn engine.
  *
  * Owns the single path from "caller said something" to "the deck shows it and
- * AURA answers", plus the human-approval gate that no consequential action can
+ * ECHO answers", plus the human-approval gate that no consequential action can
  * go around. Everything that reaches the frontend is sequenced here, so ordering
  * is a property of this file rather than of whichever service happened to be
  * fast that second.
@@ -129,7 +129,7 @@ export class Orchestrator {
    * Canonical first, derived second: the log reads as the backend's own story,
    * and the deck's finer-grained view always trails the fact it came from.
    */
-  publish(session: Session, event: UnsequencedEvent): AuraEvent[] {
+  publish(session: Session, event: UnsequencedEvent): EchoEvent[] {
     // The console validates every frame and silently drops what fails, so the
     // payload is put in its shape before it is sealed into the log.
     const shaped: UnsequencedEvent = {
@@ -142,7 +142,7 @@ export class Orchestrator {
     };
     const sealed = this.store.append(session, shaped);
     this.hub.broadcast(session.session_id, sealed);
-    const out: AuraEvent[] = [sealed];
+    const out: EchoEvent[] = [sealed];
 
     const { events, state } = project(
       sealed.type,
@@ -176,7 +176,7 @@ export class Orchestrator {
       timestamp?: string;
       payload?: Record<string, unknown>;
     },
-  ): AuraEvent[] {
+  ): EchoEvent[] {
     return this.publish(session, {
       event_id: event.event_id || `evt_${randomUUID()}`,
       session_id: session.session_id,
@@ -268,7 +268,7 @@ export class Orchestrator {
    *
    * Voice owns the audio truth (who is speaking, what was heard, when TTS was
    * cut off); the gateway only sequences it and notes the two facts it needs for
-   * its own decisions: whether AURA currently has the floor, and whether the
+   * its own decisions: whether ECHO currently has the floor, and whether the
    * voice layer is failing.
    */
   ingestVoiceEvent(
@@ -279,7 +279,7 @@ export class Orchestrator {
       timestamp?: string;
       payload?: Record<string, unknown>;
     },
-  ): AuraEvent[] {
+  ): EchoEvent[] {
     const payload = { ...(event.payload ?? {}) };
 
     if (event.type === CANON_EVENT.AgentSpeaking) {
@@ -331,7 +331,7 @@ export class Orchestrator {
   ): Promise<UtteranceReply> {
     const turnId = this.store.beginTurn(session);
 
-    // Barge-in: the caller talking over AURA outranks whatever AURA was saying.
+    // Barge-in: the caller talking over ECHO outranks whatever ECHO was saying.
     if (session.agentSpeaking) {
       session.agentSpeaking = false;
       await this.voice.cancel(session.session_id, "barge_in");
@@ -466,7 +466,7 @@ export class Orchestrator {
     }
 
     // Voice callers speak the HTTP response themselves. Pushing TTS as well
-    // would make AURA say every line twice.
+    // would make ECHO say every line twice.
     if (!selfPublished) {
       this.publish(
         session,
@@ -501,7 +501,7 @@ export class Orchestrator {
   private maybeRaiseApproval(
     session: Session,
     response: {
-      events: AuraEvent[];
+      events: EchoEvent[];
       proposed_tools: ToolProposal[];
       state: IncidentState;
     },
@@ -553,7 +553,7 @@ export class Orchestrator {
   /**
    * Open the human gate.
    *
-   * Public because both brains reach it: the AURA protocol machine raises it
+   * Public because both brains reach it: the ECHO protocol machine raises it
    * from a `dispatch.proposed`, and in Vapi mode the agent reaches it by
    * calling the `request_dispatch` tool. There is exactly one gate either way.
    */

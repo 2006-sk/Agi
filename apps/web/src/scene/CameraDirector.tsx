@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { useCues } from "../hooks/useCues.ts";
 import { project } from "../lib/geo.ts";
-import { useAuraStore } from "../store/useAuraStore.ts";
+import { useEchoStore } from "../store/useEchoStore.ts";
 import { shake } from "./sceneRefs.ts";
 
 /** Idle view: from the south-west, low, with the downtown skyline on the horizon. */
@@ -13,7 +13,7 @@ export function CameraDirector() {
   const controls = useRef<CameraControls>(null);
   const mode = useRef<"idle" | "focused">("idle");
   const userUntil = useRef(0);
-  const focusId = useAuraStore((s) => s.focusId);
+  const focusId = useEchoStore((s) => s.focusId);
 
   const flyTo = (x: number, z: number, dist = 62) => {
     mode.current = "focused";
@@ -40,7 +40,7 @@ export function CameraDirector() {
 
   const focusLocation = (id: string | null): [number, number] | null => {
     if (!id) return null;
-    const s = useAuraStore.getState().sessions[id];
+    const s = useEchoStore.getState().sessions[id];
     const loc = s?.state?.location;
     if (!loc?.verified || loc.latitude === null || loc.longitude === null) return null;
     return project(loc.latitude, loc.longitude);
@@ -48,13 +48,13 @@ export function CameraDirector() {
 
   const unitLocation = (id: string | null): [number, number] | null => {
     if (!id) return null;
-    const route = useAuraStore.getState().sessions[id]?.state?.response_plan?.route;
+    const route = useEchoStore.getState().sessions[id]?.state?.response_plan?.route;
     const first = route?.polyline[0];
     return first ? project(first[0], first[1]) : null;
   };
 
   useCues((cue) => {
-    const state = useAuraStore.getState();
+    const state = useEchoStore.getState();
     if (!state.settings.follow) return;
     const current = state.focusId;
     switch (cue.kind) {
@@ -71,7 +71,7 @@ export function CameraDirector() {
         shake.trigger(750, 1);
         // hold the punch-in, then pull back to show the prepared route
         window.setTimeout(() => {
-          const state = useAuraStore.getState();
+          const state = useEchoStore.getState();
           if (state.focusId !== current) return;
           const a = focusLocation(current);
           const b = unitLocation(current);
@@ -99,7 +99,7 @@ export function CameraDirector() {
     if (!focusId) return;
     const at = focusLocation(focusId);
     const unit = unitLocation(focusId);
-    if (at && unit && useAuraStore.getState().sessions[focusId]?.state?.response_plan) frame(at, unit);
+    if (at && unit && useEchoStore.getState().sessions[focusId]?.state?.response_plan) frame(at, unit);
     else if (at) flyTo(at[0], at[1]);
   }, [focusId]);
 

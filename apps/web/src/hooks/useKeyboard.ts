@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAuraStore } from "../store/useAuraStore.ts";
+import { useEchoStore } from "../store/useEchoStore.ts";
 import type { DemoController } from "./useDemoController.ts";
 
 /** Space: start / next turn. Enter: approve. R: reject. Backtick: console. Esc: close console. */
@@ -12,7 +12,7 @@ export function useKeyboard(controller: DemoController): void {
         if (event.key === "Escape") (target as HTMLElement).blur();
         return;
       }
-      const store = useAuraStore.getState();
+      const store = useEchoStore.getState();
       if (event.code === "Space") {
         event.preventDefault();
         if (!store.ui.demoStarted) void controller.startDemo();

@@ -20,7 +20,7 @@ export interface ModelMessages {
   stepId: string | null;
 }
 
-const SYSTEM_PROMPT = `You are the extraction engine for AURA, a human-supervised emergency-intake assistant used in a simulation.
+const SYSTEM_PROMPT = `You are the extraction engine for ECHO, a human-supervised emergency-intake assistant used in a simulation.
 You read ONE new caller utterance plus the known incident state and report OBSERVATIONS as strict JSON.
 
 Rules:
@@ -29,7 +29,7 @@ Rules:
 - category: unknown | medical | fire | police | other. Use "unknown" when the utterance does not indicate one.
 - priority: unknown | low | medium | high | critical. "critical" means an immediate life threat (not breathing, unresponsive, severe bleeding, people trapped in fire, active violence). Chest pain, difficulty breathing, stroke signs, seizures are at least "high".
 - conscious: yes | no | unknown. breathing: normal | labored | no | unknown. "labored" means breathing but struggling (short of breath, gasping, can't catch breath). Use breathing "no" ONLY when the caller says the patient is not breathing or has stopped breathing.
-- If AURA's last question was a yes/no question, interpret short answers ("no", "yeah he is") as answers to that question.
+- If ECHO's last question was a yes/no question, interpret short answers ("no", "yeah he is") as answers to that question.
 - facts: short lowercase noun phrases, e.g. "chest pain", "adult male", "sweating", "not breathing". Give each a confidence from 0 to 1. Do not repeat facts already in the known state unless the utterance restates them.
 - chief_complaint: the main problem in a few words if newly stated, else null.
 - location_raw: the address or place exactly as spoken, else null. Do not normalize or guess a city.
@@ -72,7 +72,7 @@ export function buildExtractionMessages(input: ExtractionPromptInput): ModelMess
   if (input.conversationSummary) {
     parts.push(`\nCONVERSATION SO FAR: ${input.conversationSummary}`);
   }
-  parts.push(`\nAURA'S LAST QUESTION: ${input.lastPrompt ? JSON.stringify(input.lastPrompt) : "(none yet)"}`);
+  parts.push(`\nECHO'S LAST QUESTION: ${input.lastPrompt ? JSON.stringify(input.lastPrompt) : "(none yet)"}`);
   parts.push(`\nNEW CALLER UTTERANCE: ${JSON.stringify(input.utterance)}`);
   if (input.repairNote) {
     parts.push(`\nYOUR PREVIOUS REPLY WAS INVALID: ${input.repairNote}\nReply again with only a valid JSON object.`);

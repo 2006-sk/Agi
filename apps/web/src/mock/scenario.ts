@@ -15,13 +15,13 @@ export interface ScenarioCaller {
 
 export interface ScenarioTurn {
   utterance: string;
-  /** Silence after AURA finishes before the caller starts, ms at pace 1. */
+  /** Silence after ECHO finishes before the caller starts, ms at pace 1. */
   pause_before_ms: number;
   /** Cadence of simulated STT partials. */
   ms_per_word: number;
-  /** The caller interrupts AURA's current line. */
+  /** The caller interrupts ECHO's current line. */
   barge_in?: boolean;
-  /** Fraction of AURA's estimated speaking time at which the barge-in happens. */
+  /** Fraction of ECHO's estimated speaking time at which the barge-in happens. */
   barge_in_at?: number;
   note: string;
 }
@@ -47,11 +47,11 @@ export const MEDICAL_CARDIAC_SCENARIO: Scenario = {
   id: "medical_cardiac",
   title: "Chest pain to cardiac arrest",
   description:
-    "Adult male with chest pain at 170 St Germain Ave. The caller interrupts with 'he stopped breathing'; AURA escalates to critical, prepares EMS and opens the human-approval gate.",
+    "Adult male with chest pain at 170 St Germain Ave. The caller interrupts with 'he stopped breathing'; ECHO escalates to critical, prepares EMS and opens the human-approval gate.",
   caller: { label: "Caller 4471", language: "en-US", channel: "overflow-line-2" },
-  greeting: "Emergency intake, this is AURA. I'm here to help. Tell me what's happening.",
+  greeting: "Emergency intake, this is ECHO. I'm here to help. Tell me what's happening.",
   turns: [
-    { utterance: "Hi, um, my dad is having really bad chest pain", pause_before_ms: 900, ms_per_word: 260, note: "Classified medical / high. AURA asks for the address." },
+    { utterance: "Hi, um, my dad is having really bad chest pain", pause_before_ms: 900, ms_per_word: 260, note: "Classified medical / high. ECHO asks for the address." },
     { utterance: "We're at 170 St. Germain Avenue", pause_before_ms: 800, ms_per_word: 280, note: "Address captured, normalized and geocoded in the same turn. Camera flies to the beacon." },
     { utterance: "He's awake but sweating and can't catch his breath", pause_before_ms: 700, ms_per_word: 250, note: "Conscious = yes, breathing = labored. Protocol moves to breathing_check." },
     {

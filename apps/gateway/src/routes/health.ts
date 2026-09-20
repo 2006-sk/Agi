@@ -16,7 +16,7 @@ export async function healthRoutes(app: FastifyInstance, deps: HealthDeps): Prom
   /** Liveness only — never blocks on a downstream service. */
   app.get("/health", async () => ({
     ok: true,
-    service: "aura-gateway",
+    service: "echo-gateway",
     sessions: deps.store.list().map((s) => ({
       session_id: s.session_id,
       status: s.status,

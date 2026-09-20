@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { CATEGORY_LABEL, priorityColor, serviceColor } from "../lib/colors.ts";
 import { humanize, pct } from "../lib/format.ts";
-import { selectFocus, useAuraStore } from "../store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../store/useEchoStore.ts";
 import { Arc, Chip, Panel, Stat } from "./ui.tsx";
 
 function assessmentColor(value: string): string {
@@ -19,7 +19,7 @@ function assessmentColor(value: string): string {
 }
 
 export function IncidentCard() {
-  const focus = useAuraStore(selectFocus);
+  const focus = useEchoStore(selectFocus);
   const state = focus?.state ?? null;
 
   if (!focus || !state) {
@@ -111,7 +111,7 @@ export function IncidentCard() {
             </motion.div>
           )}
           {state.location.latitude !== null && (
-            <motion.div key="coords" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mono text-[10px] text-aura/80 mt-0.5">
+            <motion.div key="coords" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mono text-[10px] text-echo/80 mt-0.5">
               {state.location.latitude.toFixed(4)}, {state.location.longitude?.toFixed(4)}
             </motion.div>
           )}

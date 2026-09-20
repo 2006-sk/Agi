@@ -119,7 +119,7 @@ export class GatewayTransport implements Transport {
       }
       const parsed = parseEvent(raw);
       if (!parsed.ok) {
-        console.warn("[aura] dropped event:", parsed.error);
+        console.warn("[echo] dropped event:", parsed.error);
         return;
       }
       lastSequence = Math.max(lastSequence, parsed.event.sequence);

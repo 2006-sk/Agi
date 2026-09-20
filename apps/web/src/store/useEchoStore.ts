@@ -113,7 +113,7 @@ export interface TickerItem {
 }
 
 export interface Settings {
-  ttsAura: boolean;
+  ttsEcho: boolean;
   ttsCaller: boolean;
   sfx: boolean;
   reviewer: string;
@@ -130,7 +130,7 @@ export interface UiState {
   error: string | null;
 }
 
-export interface AuraStore {
+export interface EchoStore {
   sessions: Record<string, SessionView>;
   order: string[];
   focusId: string | null;
@@ -175,7 +175,7 @@ function emptySession(id: string): SessionView {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  ttsAura: true,
+  ttsEcho: true,
   ttsCaller: true,
   sfx: true,
   reviewer: "dispatcher_1",
@@ -188,7 +188,7 @@ const DEFAULT_UI: UiState = { consoleOpen: false, demoStarted: false, demoSessio
 
 const cap = <T>(items: T[], max: number): T[] => (items.length > max ? items.slice(items.length - max) : items);
 
-export const useAuraStore = create<AuraStore>((set) => ({
+export const useEchoStore = create<EchoStore>((set) => ({
   sessions: {},
   order: [],
   focusId: null,
@@ -494,6 +494,6 @@ export const useAuraStore = create<AuraStore>((set) => ({
   setUi: (patch) => set((prev) => ({ ui: { ...prev.ui, ...patch } })),
 }));
 
-export const selectFocus = (state: AuraStore): SessionView | null => (state.focusId ? (state.sessions[state.focusId] ?? null) : null);
-export const selectFocusState = (state: AuraStore): IncidentState | null => selectFocus(state)?.state ?? null;
-export const selectSessionList = (state: AuraStore): SessionView[] => state.order.map((id) => state.sessions[id]).filter((s): s is SessionView => Boolean(s));
+export const selectFocus = (state: EchoStore): SessionView | null => (state.focusId ? (state.sessions[state.focusId] ?? null) : null);
+export const selectFocusState = (state: EchoStore): IncidentState | null => selectFocus(state)?.state ?? null;
+export const selectSessionList = (state: EchoStore): SessionView[] => state.order.map((id) => state.sessions[id]).filter((s): s is SessionView => Boolean(s));

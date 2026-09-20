@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     await app.listen({ port: config.port, host: config.host });
     app.log.info(
       { model: config.model, base_url: config.baseUrl, mock: config.useMockModel },
-      "AURA intelligence service ready",
+      "ECHO intelligence service ready",
     );
   } catch (error) {
     app.log.error(error);

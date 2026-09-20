@@ -1,4 +1,6 @@
-# AURA — Integration (Shresth)
+# ECHO — Integration (Shresth)
+
+**E**mergency **C**oordination and **H**andoff **O**perator.
 
 How the three backends and the deck become one product, and how to run it.
 
@@ -9,7 +11,7 @@ it together.
 ## Repository
 
 ```
-aura/
+echo/
 ├── apps/
 │   ├── web/                 deck (Kenil) — Next.js
 │   └── gateway/             integration gateway (Shresth) — the only service the deck talks to
@@ -67,7 +69,7 @@ is worse than none at all.
 POST /api/calls                      create (accepts your own session_id)
 GET  /api/calls/{id}                 combined state + pending approvals
 GET  /api/calls/{id}/events?since=N  the append-only log
-POST /api/calls/{id}/utterance       final caller text -> AURA's approved reply
+POST /api/calls/{id}/utterance       final caller text -> ECHO's approved reply
 POST /api/calls/{id}/approval        the human decision
 POST /api/calls/{id}/demo            deterministic scenario (cardiac | vague)
 POST /api/calls/{id}/reset           wipe back to opening state, keep the id
@@ -109,7 +111,7 @@ tested without a socket, a browser or a model (31 cases).
 | `protocol.changed` | `protocol.step` (old step done, new step active) |
 | `tool.started` / `tool.completed` | `tool.invoked` / `tool.result` |
 | `dispatch.proposed` | `responders.available`, `route.proposed` |
-| `agent.speaking` | `transcript.final` with `speaker: "aura"` |
+| `agent.speaking` | `transcript.final` with `speaker: "echo"` |
 | `agent.interrupted` | `audio.interrupted` |
 | `approval.resolved` | `approval.granted` / `approval.rejected` |
 | — | `session.started`, `dispatch.started` / `progress` / `arrived` |
@@ -148,7 +150,7 @@ that can afford to be dropped. Everything after it lands in order.
 final caller transcript
 → per-session queue (never two analyses for one session at once)
 → open a turn id
-→ cancel AURA's speech if the caller barged in
+→ cancel ECHO's speech if the caller barged in
 → analyze against the full previous state
 → apply state, publish the service's events
 → raise the approval gate if dispatch was proposed
@@ -165,7 +167,7 @@ facts the caller gave are real; the answer is to a question they have moved past
 
 **Who speaks the reply.** The voice service's bridge speaks the HTTP response
 itself. So for `source: "voice"` or `"text"` the gateway returns `reply_text` and
-does *not* also push `/internal/speak` — that would make AURA say every line
+does *not* also push `/internal/speak` — that would make ECHO say every line
 twice. For `"demo"` and `"operator"` nobody is listening, so the gateway does
 publish `agent.speaking` and push TTS.
 

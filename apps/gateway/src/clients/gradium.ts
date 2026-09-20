@@ -36,7 +36,7 @@ export const GRADIUM_TTS_URL = "wss://api.gradium.ai/api/speech/tts";
 export const GRADIUM_TTS_SAMPLE_RATE = 48000;
 
 function headers(apiKey: string): Record<string, string> {
-  return { "x-api-key": apiKey, "x-api-source": "aura-gateway" };
+  return { "x-api-key": apiKey, "x-api-source": "echo-gateway" };
 }
 
 /* ------------------------------------------------------------------ */
@@ -82,7 +82,7 @@ export function resamplePcm16(input: Buffer, fromRate: number, toRate: number): 
  * Pull one channel out of interleaved PCM.
  *
  * Vapi's transcriber stream is stereo: channel 0 is the caller, channel 1 is
- * the assistant. Only the caller should reach the recogniser, or AURA ends up
+ * the assistant. Only the caller should reach the recogniser, or ECHO ends up
  * transcribing itself.
  */
 export function extractChannel(input: Buffer, channel: number, channels: number): Buffer {
@@ -116,7 +116,7 @@ export interface SttOptions {
   model?: string;
   /**
    * Silence after the last token before the utterance is finalised. Vapi waits
-   * for a `final` to close the caller's turn, so this is effectively AURA's
+   * for a `final` to close the caller's turn, so this is effectively ECHO's
    * end-of-turn detector.
    */
   silenceMs?: number;
@@ -305,7 +305,7 @@ export function gradiumSynthesize(text: string, options: TtsOptions): Promise<Bu
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url, { headers: headers(apiKey) });
     const chunks: Buffer[] = [];
-    const contextId = `aura_${Date.now().toString(36)}`;
+    const contextId = `echo_${Date.now().toString(36)}`;
     let settled = false;
 
     const finish = (error: Error | null) => {

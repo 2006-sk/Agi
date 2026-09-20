@@ -49,7 +49,7 @@ for (let run = 1; run <= repeat; run += 1) {
       );
     }
     console.log(`         Events: ${r.events.map((e) => e.type).join(", ")}`);
-    console.log(`         AURA: ${JSON.stringify(r.next_response)}`);
+    console.log(`         ECHO: ${JSON.stringify(r.next_response)}`);
     console.log(
       `         Meta: source=${r.meta.source} validation=${r.meta.validation} model_latency=${r.meta.model_latency_ms ?? "-"}ms total=${r.meta.total_latency_ms}ms triggers=${JSON.stringify(r.meta.triggers_matched)}`,
     );

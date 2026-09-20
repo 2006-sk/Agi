@@ -1,8 +1,8 @@
 {
-  "name": "aura-intelligence",
+  "name": "echo-intelligence",
   "version": "0.1.0",
   "private": true,
-  "description": "AURA emergency-intelligence service: SambaNova (via General Compute) structured extraction gated by a deterministic protocol state machine",
+  "description": "ECHO emergency-intelligence service: SambaNova (via General Compute) structured extraction gated by a deterministic protocol state machine",
   "type": "module",
   "engines": {
     "node": ">=22"

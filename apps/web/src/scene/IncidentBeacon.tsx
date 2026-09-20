@@ -5,7 +5,7 @@ import { AdditiveBlending, Color, DoubleSide, Mesh, MeshBasicMaterial, ShaderMat
 import { PRIORITY_PERIOD_S, priorityColor } from "../lib/colors.ts";
 import { project } from "../lib/geo.ts";
 import { readLevel } from "../store/audioLevels.ts";
-import type { SessionView } from "../store/useAuraStore.ts";
+import type { SessionView } from "../store/useEchoStore.ts";
 
 const columnVertex = /* glsl */ `
   varying vec2 vUv;

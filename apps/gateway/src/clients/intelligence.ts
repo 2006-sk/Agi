@@ -6,7 +6,7 @@
  * what keeps the protocol state machine authoritative.
  */
 
-import type { AuraEvent, IncidentState } from "@aura/contracts";
+import type { EchoEvent, IncidentState } from "@echo/contracts";
 
 export interface AnalyzeRequest {
   session_id: string;
@@ -37,7 +37,7 @@ export interface AnalyzeResponse {
   confidence: number;
   executed_tools: unknown[];
   state: IncidentState;
-  events: AuraEvent[];
+  events: EchoEvent[];
   explanation: string;
   meta: {
     model: string;
@@ -70,7 +70,7 @@ export interface ToolExecuteResponse {
   };
   state_patch: Record<string, unknown>;
   state: IncidentState;
-  events: AuraEvent[];
+  events: EchoEvent[];
 }
 
 export class IntelligenceError extends Error {

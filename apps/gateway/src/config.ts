@@ -44,11 +44,11 @@ export interface GatewayConfig {
   vapiGreeting: string;
   /**
    * Who runs the call.
-   *  "aura" — deterministic protocol machine + SambaNova; Vapi is mouth/ears.
-   *  "vapi" — the Vapi agent's own model and tools; AURA keeps state, the deck
+   *  "echo" — deterministic protocol machine + SambaNova; Vapi is mouth/ears.
+   *  "vapi" — the Vapi agent's own model and tools; ECHO keeps state, the deck
    *           and the human gate.
    */
-  voiceBrain: "aura" | "vapi";
+  voiceBrain: "echo" | "vapi";
   /**
    * Also broadcast the derived view vocabulary (`fact.extracted`,
    * `route.proposed`, ...). The command center validates against the canonical
@@ -74,7 +74,7 @@ export const config: GatewayConfig = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
   twilioNumber: process.env.TWILIO_NUMBER ?? "",
   twilioVoice: process.env.TWILIO_VOICE ?? "Polly.Joanna-Neural",
-  twilioSessionId: process.env.TWILIO_SESSION_ID ?? "aura-demo-0197",
+  twilioSessionId: process.env.TWILIO_SESSION_ID ?? "echo-demo-0197",
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? "").replace(/\/+$/, ""),
   gradiumApiKey: process.env.GRADIUM_API_KEY ?? "",
   gradiumVoiceId: process.env.GRADIUM_VOICE_ID ?? "r2sIQdqqoqgRJuXw",
@@ -86,10 +86,10 @@ export const config: GatewayConfig = {
   vapiPhoneNumber: process.env.VAPI_PHONE_NUMBER ?? "",
   vapiAssistantId: process.env.VAPI_ASSISTANT_ID ?? "",
   vapiSecret: process.env.VAPI_SECRET ?? "",
-  vapiSessionId: process.env.VAPI_SESSION_ID ?? "aura-demo-0197",
+  vapiSessionId: process.env.VAPI_SESSION_ID ?? "echo-demo-0197",
   vapiGreeting:
     process.env.VAPI_GREETING ??
     "Emergency services. This line is answered by an AI assistant with a human dispatcher supervising. Tell me what is happening and where you are.",
-  voiceBrain: process.env.VOICE_BRAIN === "vapi" ? "vapi" : "aura",
+  voiceBrain: process.env.VOICE_BRAIN === "vapi" ? "vapi" : "echo",
   emitViewEvents: process.env.EMIT_VIEW_EVENTS === "true",
 };

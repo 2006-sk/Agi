@@ -1,6 +1,6 @@
-# AURA Intelligence Service
+# ECHO Intelligence Service
 
-Pranay's slice of AURA: the emergency-intelligence backend (`services/intelligence` in the team repo). It turns each finalized caller utterance plus the current incident state into a validated incident update, using **SambaNova inference hosted by General Compute** for structured extraction and a **deterministic protocol state machine** for every decision that matters.
+Pranay's slice of ECHO: the emergency-intelligence backend (`services/intelligence` in the team repo). It turns each finalized caller utterance plus the current incident state into a validated incident update, using **SambaNova inference hosted by General Compute** for structured extraction and a **deterministic protocol state machine** for every decision that matters.
 
 > Hackathon simulation only. Nothing here dispatches real responders; every consequential action stops at a human-approval gate.
 
@@ -72,7 +72,7 @@ Response: the contract fields from `sambanova.md` plus additive integration fiel
 | --- | --- |
 | `state_patch` | Only what changed: `priority`, `facts_added`, `unverified_facts_added`, `facts_verified`, `hazards_added`, `location`, `assessment`, `protocol`, `recommended_services`, `response_plan`, `human_required`, ... |
 | `protocol_transition` | `{ protocol_id, from, to, reason, escalation }` or `null` |
-| `next_response` | The approved prompt AURA should speak (from protocol templates only) |
+| `next_response` | The approved prompt ECHO should speak (from protocol templates only) |
 | `proposed_tools` | Consequential actions awaiting approval, always `human_required: true` |
 | `confidence` | Turn confidence |
 | `state` (additive) | Full post-turn `IncidentState`; **source of truth, round-trip it as `current_state`** |

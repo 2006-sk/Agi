@@ -1,5 +1,5 @@
 /**
- * AURA shared contracts — the single source of truth for everything that crosses
+ * ECHO shared contracts — the single source of truth for everything that crosses
  * a service boundary.
  *
  * Owned by the integration layer (Shresth). Producers (voice, intelligence) and
@@ -24,7 +24,7 @@
 /* ------------------------------------------------------------------ */
 
 /** The wire envelope. Every frame on `/ws/calls/{id}` is one of these. */
-export interface AuraEvent<P = Record<string, unknown>> {
+export interface EchoEvent<P = Record<string, unknown>> {
   event_id: string;
   session_id: string;
   type: string;
@@ -37,7 +37,7 @@ export interface AuraEvent<P = Record<string, unknown>> {
 
 /** What producers hand the gateway: an envelope with no sequence assigned yet. */
 export type UnsequencedEvent<P = Record<string, unknown>> = Omit<
-  AuraEvent<P>,
+  EchoEvent<P>,
   "sequence"
 > & { sequence?: number };
 
@@ -125,7 +125,7 @@ export type Category = "unknown" | "medical" | "fire" | "police" | "other";
 export type Priority = "unknown" | "low" | "medium" | "high" | "critical";
 export type IncidentStatus = "active" | "awaiting_approval" | "dispatched" | "closed";
 export type Service = "EMS" | "FIRE" | "POLICE";
-export type Speaker = "caller" | "aura";
+export type Speaker = "caller" | "echo";
 export type ResponderKind = "ems" | "fire" | "police";
 
 /** Frontend world space: XZ plane, Y up, city spans -60..60 on both axes. */

@@ -1,8 +1,8 @@
 {
-  "name": "aura",
+  "name": "echo",
   "version": "0.1.0",
   "private": true,
-  "description": "AURA — human-supervised emergency-intake voice agent. Monorepo root.",
+  "description": "ECHO — human-supervised emergency-intake voice agent. Monorepo root.",
   "scripts": {
     "dev": "./scripts/dev.sh",
     "stop": "./scripts/stop.sh",

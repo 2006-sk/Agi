@@ -11,7 +11,7 @@ try {
       intelligence: config.intelligenceUrl,
       voice: config.voiceUrl,
     },
-    "aura gateway listening",
+    "echo gateway listening",
   );
 } catch (error) {
   app.log.error(error, "gateway failed to start");

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { initialProjection, project, type ProjectionState } from "../src/adapter/toFrontend.js";
 import { ANCHOR_LAT, ANCHOR_LNG, polylineToPath, toVec2 } from "../src/adapter/geo.js";
-import type { IncidentState } from "@aura/contracts";
+import type { IncidentState } from "@echo/contracts";
 
 /* ------------------------------------------------------------------ */
 /* Fixtures                                                            */
@@ -367,10 +367,10 @@ describe("protocol.changed projection", () => {
 });
 
 describe("voice event projection", () => {
-  it("turns an agent line into an aura transcript line", () => {
+  it("turns an agent line into an echo transcript line", () => {
     const { events } = project("agent.speaking", { text: "Stay on the line.", active: true }, fresh());
     expect(events[0]?.type).toBe("transcript.final");
-    expect(events[0]?.payload.speaker).toBe("aura");
+    expect(events[0]?.payload.speaker).toBe("echo");
   });
 
   it("emits nothing when the agent stops speaking", () => {

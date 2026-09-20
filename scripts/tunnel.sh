@@ -10,28 +10,28 @@
 #   ./scripts/tunnel.sh ngrok
 set -uo pipefail
 
-PORT="${AURA_PORT:-8000}"
+PORT="${ECHO_PORT:-8000}"
 PREFER="${1:-}"
 
 start_cloudflared() {
   echo "starting cloudflared on :$PORT …"
-  cloudflared tunnel --url "http://localhost:$PORT" 2>&1 | tee /tmp/aura-tunnel.log &
+  cloudflared tunnel --url "http://localhost:$PORT" 2>&1 | tee /tmp/echo-tunnel.log &
   for _ in $(seq 1 40); do
-    url="$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/aura-tunnel.log 2>/dev/null | head -1)"
-    [ -n "$url" ] && { echo "$url" > /tmp/aura-public-url; break; }
+    url="$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/echo-tunnel.log 2>/dev/null | head -1)"
+    [ -n "$url" ] && { echo "$url" > /tmp/echo-public-url; break; }
     sleep 0.5
   done
 }
 
 start_ngrok() {
   echo "starting ngrok on :$PORT …"
-  ngrok http "$PORT" --log stdout > /tmp/aura-tunnel.log 2>&1 &
+  ngrok http "$PORT" --log stdout > /tmp/echo-tunnel.log 2>&1 &
   for _ in $(seq 1 40); do
     # ngrok's free domain has changed more than once (.ngrok.io, .ngrok-free.app,
     # .ngrok-free.dev); match the family rather than any one of them.
     url="$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null \
       | grep -Eo 'https://[a-z0-9.-]+\.ngrok[a-z0-9.-]*\.(app|io|dev)' | head -1)"
-    [ -n "$url" ] && { echo "$url" > /tmp/aura-public-url; break; }
+    [ -n "$url" ] && { echo "$url" > /tmp/echo-public-url; break; }
     sleep 0.5
   done
 }
@@ -42,9 +42,9 @@ else
   start_cloudflared
 fi
 
-url="$(cat /tmp/aura-public-url 2>/dev/null || true)"
+url="$(cat /tmp/echo-public-url 2>/dev/null || true)"
 if [ -z "$url" ]; then
-  echo "could not get a public URL — see /tmp/aura-tunnel.log" >&2
+  echo "could not get a public URL — see /tmp/echo-tunnel.log" >&2
   exit 1
 fi
 

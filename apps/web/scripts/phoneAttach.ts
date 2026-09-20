@@ -6,7 +6,7 @@
  */
 import { GatewayTransport } from "../src/lib/gatewayTransport.ts";
 import type { TypedEvent } from "../src/contracts/index.ts";
-import { selectFocus, useAuraStore } from "../src/store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../src/store/useEchoStore.ts";
 
 const GW = "http://localhost:8000";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -47,8 +47,8 @@ async function main() {
   await tool("request_dispatch", { reason: "cardiac arrest" });
   await sleep(900);
 
-  useAuraStore.getState().applyEvents(got);
-  const focus = selectFocus(useAuraStore.getState());
+  useEchoStore.getState().applyEvents(got);
+  const focus = selectFocus(useEchoStore.getState());
   console.log(`\nreceived ${got.length} events`);
   console.log("  caller   :", focus?.caller?.caller_label, "| channel:", focus?.caller?.channel);
   console.log("  priority :", focus?.state?.priority);
@@ -57,7 +57,7 @@ async function main() {
   console.log("  gate     :", focus?.approval ? "OPEN" : "none");
   console.log();
 
-  check("a session is on the dashboard", Boolean(focus), Object.keys(useAuraStore.getState().sessions));
+  check("a session is on the dashboard", Boolean(focus), Object.keys(useEchoStore.getState().sessions));
   check("priority critical", focus?.state?.priority === "critical", focus?.state?.priority);
   check("address verified", focus?.state?.location?.verified === true);
   check("units and route drawn", (focus?.state?.response_plan?.units.length ?? 0) > 0 && Boolean(focus?.state?.response_plan?.route));

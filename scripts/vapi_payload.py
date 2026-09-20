@@ -5,11 +5,11 @@ Build the Vapi assistant payload for either mode.
 Kept out of the shell script because the tool schemas are large and nesting
 them in bash heredocs is how you end up debugging quoting at 2am.
 
-  vapi  Vapi's own STT / model / TTS. The agent reaches AURA through tools,
+  vapi  Vapi's own STT / model / TTS. The agent reaches ECHO through tools,
         which move the incident and light the deck. The approval gate stays
-        in AURA: request_dispatch opens it and returns "pending".
+        in ECHO: request_dispatch opens it and returns "pending".
 
-  aura  Vapi is carriage only. Gradium does STT and TTS through AURA
+  echo  Vapi is carriage only. Gradium does STT and TTS through ECHO
         endpoints, and the deterministic protocol machine writes every line.
 """
 
@@ -21,7 +21,7 @@ FIRST_MESSAGE = (
     "dispatcher supervising. Tell me what is happening and where you are."
 )
 
-SYSTEM_PROMPT = """You are AURA, an emergency call-intake assistant answering an overflow 911 line. A human dispatcher is supervising you and sees everything you record.
+SYSTEM_PROMPT = """You are ECHO, an emergency call-intake assistant answering an overflow 911 line. A human dispatcher is supervising you and sees everything you record.
 
 Your job is to find out, as fast as possible:
 1. WHERE the emergency is - get this first, it matters more than anything else.
@@ -127,7 +127,7 @@ def build(mode, base, ws_base, secret, voice_id):
         server["secret"] = secret
 
     payload = {
-        "name": "AURA",
+        "name": "ECHO",
         "firstMessageMode": "assistant-speaks-first",
         "firstMessage": FIRST_MESSAGE,
         "server": server,
@@ -137,7 +137,7 @@ def build(mode, base, ws_base, secret, voice_id):
     }
 
     if mode == "vapi":
-        # Vapi owns speech and reasoning; AURA is reached through tools.
+        # Vapi owns speech and reasoning; ECHO is reached through tools.
         payload["transcriber"] = {"provider": "deepgram", "model": "nova-2", "language": "en"}
         payload["voice"] = {"provider": "vapi", "voiceId": voice_id}
         payload["model"] = {
@@ -148,7 +148,7 @@ def build(mode, base, ws_base, secret, voice_id):
             "tools": tools(base),
         }
     else:
-        # Carriage only: every thinking and speaking part points back at AURA.
+        # Carriage only: every thinking and speaking part points back at ECHO.
         tool_server = {"url": f"{ws_base}/vapi/transcriber"}
         voice_server = {"url": f"{base}/vapi/voice", "timeoutSeconds": 30}
         if secret:
@@ -159,11 +159,11 @@ def build(mode, base, ws_base, secret, voice_id):
         payload["model"] = {
             "provider": "custom-llm",
             "url": f"{base}/vapi",
-            "model": "aura-protocol",
+            "model": "echo-protocol",
             "messages": [
                 {
                     "role": "system",
-                    "content": "Ignored. Every reply comes from the AURA protocol state machine.",
+                    "content": "Ignored. Every reply comes from the ECHO protocol state machine.",
                 }
             ],
         }

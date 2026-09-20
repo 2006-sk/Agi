@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { PROTOCOL_NAMES, PROTOCOL_STEPS, STEP_LABELS } from "../contracts/index.ts";
-import { selectFocus, useAuraStore } from "../store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../store/useEchoStore.ts";
 import { Chip, Panel } from "./ui.tsx";
 
 const ROW = 36;
@@ -9,7 +9,7 @@ const DOT_X = 12;
 type StepState = "done" | "current" | "pending" | "skipped";
 
 export function ProtocolTree() {
-  const focus = useAuraStore(selectFocus);
+  const focus = useEchoStore(selectFocus);
   const state = focus?.state ?? null;
   const protocolId = state?.protocol.id ?? "MED_CARDIAC_01";
   const steps = PROTOCOL_STEPS[protocolId] ?? PROTOCOL_STEPS.MED_CARDIAC_01!;

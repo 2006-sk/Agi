@@ -6,7 +6,7 @@
  * reconnecting client can never perturb the canonical stream.
  */
 
-import type { AuraEvent } from "@aura/contracts";
+import type { EchoEvent } from "@echo/contracts";
 
 export interface Sink {
   send(data: string): void;
@@ -39,7 +39,7 @@ export class EventHub {
   }
 
   /** Deliver to every live socket for a session. A dead socket is dropped, not thrown on. */
-  broadcast(sessionId: string, event: AuraEvent): void {
+  broadcast(sessionId: string, event: EchoEvent): void {
     const room = this.rooms.get(sessionId);
     if (!room || room.size === 0) return;
     const frame = JSON.stringify(event);
@@ -57,7 +57,7 @@ export class EventHub {
   }
 
   /** Send one client the backlog it missed, oldest first. */
-  replay(sink: Sink, events: AuraEvent[]): void {
+  replay(sink: Sink, events: EchoEvent[]): void {
     for (const event of events) {
       try {
         sink.send(JSON.stringify(event));

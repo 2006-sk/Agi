@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useCues } from "../hooks/useCues.ts";
-import { useAuraStore } from "../store/useAuraStore.ts";
+import { useEchoStore } from "../store/useEchoStore.ts";
 
 let context: AudioContext | null = null;
 
@@ -90,7 +90,7 @@ export function useSfx(): void {
   }, []);
 
   useCues((cue) => {
-    if (!useAuraStore.getState().settings.sfx) return;
+    if (!useEchoStore.getState().settings.sfx) return;
     switch (cue.kind) {
       case "call_started":
         sfx.ping(cue.ambient);

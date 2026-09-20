@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { MEDICAL_CARDIAC_SCENARIO } from "../mock/scenario.ts";
 import { transport } from "../lib/client.ts";
-import { selectFocus, useAuraStore } from "../store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../store/useEchoStore.ts";
 
 export interface DemoController {
   startDemo(): Promise<void>;
@@ -18,7 +18,7 @@ function describe(error: unknown): string {
 
 export function useDemoController(): DemoController {
   const startDemo = useCallback(async () => {
-    const store = useAuraStore.getState();
+    const store = useEchoStore.getState();
     if (store.ui.starting || store.ui.demoStarted) return;
     store.setUi({ starting: true, error: null });
     try {
@@ -34,26 +34,26 @@ export function useDemoController(): DemoController {
         pace: store.settings.pace,
         ambient: true,
       });
-      useAuraStore.getState().setUi({ demoStarted: true, demoSessionId: session_id, starting: false });
+      useEchoStore.getState().setUi({ demoStarted: true, demoSessionId: session_id, starting: false });
     } catch (error) {
-      useAuraStore.getState().setUi({ starting: false, error: `Could not start the demo: ${describe(error)}` });
+      useEchoStore.getState().setUi({ starting: false, error: `Could not start the demo: ${describe(error)}` });
     }
   }, []);
 
   const advance = useCallback(async () => {
-    const { ui } = useAuraStore.getState();
+    const { ui } = useEchoStore.getState();
     if (!ui.demoSessionId) return;
-    await transport.advance(ui.demoSessionId).catch((error) => useAuraStore.getState().setUi({ error: describe(error) }));
+    await transport.advance(ui.demoSessionId).catch((error) => useEchoStore.getState().setUi({ error: describe(error) }));
   }, []);
 
   const decide = useCallback(async (approved: boolean) => {
-    const store = useAuraStore.getState();
+    const store = useEchoStore.getState();
     const focus = selectFocus(store);
     if (!focus?.approval || focus.approval.resolved) return;
     try {
       await transport.approval(focus.id, { action_id: focus.approval.payload.action_id, approved, reviewer: store.settings.reviewer });
     } catch (error) {
-      useAuraStore.getState().setUi({ error: describe(error) });
+      useEchoStore.getState().setUi({ error: describe(error) });
     }
   }, []);
 
@@ -61,17 +61,17 @@ export function useDemoController(): DemoController {
   const reject = useCallback(() => decide(false), [decide]);
 
   const sendUtterance = useCallback(async (text: string) => {
-    const store = useAuraStore.getState();
+    const store = useEchoStore.getState();
     let id = store.ui.demoSessionId ?? store.focusId;
     try {
       if (!id || store.sessions[id]?.kind === "ambient") {
         const created = await transport.createCall({ caller_label: "Caller (text)", channel: "text-fallback" });
         id = created.session_id;
-        useAuraStore.getState().setUi({ demoStarted: true, demoSessionId: id });
+        useEchoStore.getState().setUi({ demoStarted: true, demoSessionId: id });
       }
       await transport.utterance(id, text);
     } catch (error) {
-      useAuraStore.getState().setUi({ error: describe(error) });
+      useEchoStore.getState().setUi({ error: describe(error) });
     }
   }, []);
 
@@ -79,9 +79,9 @@ export function useDemoController(): DemoController {
     try {
       await transport.reset();
     } catch (error) {
-      useAuraStore.getState().setUi({ error: describe(error) });
+      useEchoStore.getState().setUi({ error: describe(error) });
     }
-    useAuraStore.getState().resetAll();
+    useEchoStore.getState().resetAll();
   }, []);
 
   return useMemo(() => ({ startDemo, advance, approve, reject, sendUtterance, reset }), [startDemo, advance, approve, reject, sendUtterance, reset]);

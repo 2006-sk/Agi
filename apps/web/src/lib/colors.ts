@@ -30,7 +30,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   other: "Other",
 };
 
-export const AURA_COLOR = "#22d3ee";
+export const ECHO_COLOR = "#22d3ee";
 
 export function priorityColor(priority: Priority | undefined | null): string {
   return PRIORITY_COLORS[priority ?? "unknown"];

@@ -37,9 +37,9 @@ const num = (v: unknown, fallback = 0): number =>
   typeof v === "number" && Number.isFinite(v) ? v : fallback;
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/** The console's speaker vocabulary: the agent is "agent", never "aura". */
+/** The console's speaker vocabulary: the agent is "agent", never "echo". */
 function speaker(v: unknown): "caller" | "agent" {
-  return v === "aura" || v === "agent" || v === "assistant" ? "agent" : "caller";
+  return v === "echo" || v === "agent" || v === "assistant" ? "agent" : "caller";
 }
 
 /** The console grades risk on the priority scale. */

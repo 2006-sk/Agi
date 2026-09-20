@@ -56,7 +56,7 @@ export const ProtocolPointer = z.object({
   step: z.string().nullable().default(null),
   /** Additive: steps whose approved question has already been asked. */
   asked: z.array(z.string()).default([]),
-  /** Additive: the last approved prompt AURA spoke, so short answers can be interpreted. */
+  /** Additive: the last approved prompt ECHO spoke, so short answers can be interpreted. */
   last_prompt: z.string().nullable().default(null),
 });
 export type ProtocolPointer = z.infer<typeof ProtocolPointer>;

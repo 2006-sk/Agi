@@ -154,7 +154,7 @@ export class ProtocolMachine {
     return this.legalTools(stepId).includes(tool);
   }
 
-  /** The only text AURA may say at a step: the first approved template whose condition holds. */
+  /** The only text ECHO may say at a step: the first approved template whose condition holds. */
   selectPrompt(stepId: string, state: IncidentState, extra: Record<string, string> = {}): string {
     const step = this.step(stepId);
     const template = step.prompts.find((p) => evaluateWhen(p.when, state)) ?? step.prompts[step.prompts.length - 1];

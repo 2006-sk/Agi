@@ -14,7 +14,7 @@
       "allowed_next": ["identify_problem"],
       "legal_tools": ["normalize_address", "geocode_address"],
       "prompts": [
-        { "when": "!location_captured", "text": "This is AURA emergency intake. What is the exact address of the emergency?" },
+        { "when": "!location_captured", "text": "This is ECHO emergency intake. What is the exact address of the emergency?" },
         { "when": "!location_verified", "text": "I heard {{location_raw}}. Can you confirm that address?" },
         { "when": "default", "text": "Thank you, I have {{location_normalized}}." }
       ]

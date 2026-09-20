@@ -11,7 +11,7 @@
 
 import { GatewayTransport } from "../src/lib/gatewayTransport.ts";
 import { parseEvent, type TypedEvent } from "../src/contracts/index.ts";
-import { selectFocus, useAuraStore } from "../src/store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../src/store/useEchoStore.ts";
 
 const GATEWAY = process.env.GATEWAY ?? "http://localhost:8000";
 
@@ -111,9 +111,9 @@ async function main() {
   }
 
   console.log("\n--- the store the HUD reads ---");
-  useAuraStore.getState().applyEvents(received);
-  const focus = selectFocus(useAuraStore.getState());
-  check("a focused session exists", Boolean(focus), Object.keys(useAuraStore.getState().sessions));
+  useEchoStore.getState().applyEvents(received);
+  const focus = selectFocus(useEchoStore.getState());
+  check("a focused session exists", Boolean(focus), Object.keys(useEchoStore.getState().sessions));
 
   const incident = focus?.state ?? null;
   const location = incident?.location ?? null;

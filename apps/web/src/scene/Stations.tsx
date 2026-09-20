@@ -5,7 +5,7 @@ import { AdditiveBlending, Color, DoubleSide, Group } from "three";
 import { STATIONS, type Station } from "../mock/scenario.ts";
 import { serviceColor } from "../lib/colors.ts";
 import { project } from "../lib/geo.ts";
-import { selectFocus, useAuraStore } from "../store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../store/useEchoStore.ts";
 
 interface StationMarkerProps {
   station: Station;
@@ -47,7 +47,7 @@ function StationMarker({ station, index, highlighted }: StationMarkerProps) {
 
 /** Fixed responder roster; a station lights up when it is part of the focused plan. */
 export function Stations() {
-  const planUnits = useAuraStore((s) => selectFocus(s)?.state?.response_plan?.units.map((u) => u.unit_id).join(",") ?? "");
+  const planUnits = useEchoStore((s) => selectFocus(s)?.state?.response_plan?.units.map((u) => u.unit_id).join(",") ?? "");
   const set = useMemo(() => new Set(planUnits.split(",").filter(Boolean)), [planUnits]);
   return (
     <>

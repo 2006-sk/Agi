@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Free the AURA ports. Useful after a crash left something listening.
+# Free the ECHO ports. Useful after a crash left something listening.
 set -uo pipefail
 for port in 8082 8000 8100 5173; do
   pid="$(lsof -ti tcp:"$port" 2>/dev/null || true)"

@@ -1,11 +1,11 @@
 import { useShallow } from "zustand/react/shallow";
-import { selectSessionList, useAuraStore } from "../store/useAuraStore.ts";
+import { selectSessionList, useEchoStore } from "../store/useEchoStore.ts";
 import { IncidentBeacon } from "./IncidentBeacon.tsx";
 
 export function Beacons() {
-  const sessions = useAuraStore(useShallow(selectSessionList));
-  const focusId = useAuraStore((s) => s.focusId);
-  const focus = useAuraStore((s) => s.focus);
+  const sessions = useEchoStore(useShallow(selectSessionList));
+  const focusId = useEchoStore((s) => s.focusId);
+  const focus = useEchoStore((s) => s.focus);
   return (
     <>
       {sessions

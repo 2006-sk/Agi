@@ -4,10 +4,10 @@ import "./styles.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import { useAuraStore } from "./store/useAuraStore.ts";
+import { useEchoStore } from "./store/useEchoStore.ts";
 
 if (import.meta.env.DEV) {
-  (window as unknown as { __aura: typeof useAuraStore }).__aura = useAuraStore;
+  (window as unknown as { __echo: typeof useEchoStore }).__echo = useEchoStore;
 }
 
 createRoot(document.getElementById("root")!).render(

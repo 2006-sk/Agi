@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type {
-  AuraEvent,
+  EchoEvent,
   IncidentState,
   UnsequencedEvent,
-} from "@aura/contracts";
+} from "@echo/contracts";
 
 export interface PendingApproval {
   approval_id: string;
@@ -28,7 +28,7 @@ export interface Session {
   state: IncidentState | null;
   /** Concatenated per-turn explanations, fed back as `conversation_summary`. */
   summaryParts: string[];
-  log: AuraEvent[];
+  log: EchoEvent[];
   sequence: number;
   approvals: Map<string, PendingApproval>;
   /** Monotonic turn counter. A turn is stale once `latestTurn` moves past it. */
@@ -137,9 +137,9 @@ export class SessionStore {
   }
 
   /** Stamp a producer's event with this session's next sequence and store it. */
-  append(session: Session, event: UnsequencedEvent): AuraEvent {
+  append(session: Session, event: UnsequencedEvent): EchoEvent {
     session.sequence += 1;
-    const sealed: AuraEvent = {
+    const sealed: EchoEvent = {
       event_id: event.event_id || `evt_${randomUUID()}`,
       session_id: session.session_id,
       type: event.type,

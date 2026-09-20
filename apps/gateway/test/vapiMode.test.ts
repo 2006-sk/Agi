@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { buildGateway, type AuraGateway } from "../src/app.js";
+import { buildGateway, type EchoGateway } from "../src/app.js";
 import { NullVoiceClient } from "../src/clients/voice.js";
 import { config as baseConfig } from "../src/config.js";
 import { FakeGis } from "./helpers/fakeGis.js";
 
 /**
- * Vapi mode: the agent is the brain, AURA keeps the gate.
+ * Vapi mode: the agent is the brain, ECHO keeps the gate.
  *
  * The point of these tests is that escalation has to be *earned*. A scripted
  * demo that always ends in a critical cardiac arrest proves nothing; what
@@ -18,7 +18,7 @@ import { FakeGis } from "./helpers/fakeGis.js";
  * pinned to the deck's session so a real phone call lights up the screen.
  */
 
-let gateway: AuraGateway;
+let gateway: EchoGateway;
 let intelligence: FakeGis;
 let baseUrl: string;
 
@@ -380,10 +380,10 @@ describe("robustness", () => {
 
   it("starts a fresh incident when a new call arrives on the same line", async () => {
     await gateway.app.close();
-    await start({ vapiSessionId: "aura-demo-0197" });
+    await start({ vapiSessionId: "echo-demo-0197" });
 
     await agentTool("call-1", "update_incident", { category: "medical", priority: "critical" });
-    expect(gateway.store.get("aura-demo-0197")!.state?.priority).toBe("critical");
+    expect(gateway.store.get("echo-demo-0197")!.state?.priority).toBe("critical");
 
     // Vapi reports the next call starting on the same pinned session.
     await fetch(`${baseUrl}/vapi/webhook`, {
@@ -394,7 +394,7 @@ describe("robustness", () => {
       }),
     });
 
-    const session = gateway.store.get("aura-demo-0197")!;
+    const session = gateway.store.get("echo-demo-0197")!;
     expect(session.state).toBeNull();
     expect(session.log[0]?.sequence).toBe(1);
     expect(session.approvals.size).toBe(0);

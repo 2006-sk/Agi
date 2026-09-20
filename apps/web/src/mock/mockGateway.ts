@@ -447,7 +447,7 @@ class DemoRun {
 
   start(): void {
     void this.run().catch((error: unknown) => {
-      if (!(error instanceof CancelledError)) console.error("[aura mock] demo run failed", error);
+      if (!(error instanceof CancelledError)) console.error("[echo mock] demo run failed", error);
       this.finished = true;
     });
   }

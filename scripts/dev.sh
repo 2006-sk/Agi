@@ -61,7 +61,7 @@ wait_for() {
   return 1
 }
 
-echo "AURA — starting services"
+echo "ECHO — starting services"
 
 # 1. Intelligence (Pranay). Nothing downstream is useful without it.
 npm --prefix services/intelligence run start > logs/intelligence.log 2>&1 &
@@ -75,7 +75,7 @@ wait_for "gateway" "http://localhost:8000/health" logs/gateway.log
 
 # 3. Voice (Aditya). Optional: text and demo modes work without it.
 if [ "$WITH_VOICE" = "1" ]; then
-  (cd services/voice && uv run aura-voice) > logs/voice.log 2>&1 &
+  (cd services/voice && uv run echo-voice) > logs/voice.log 2>&1 &
   PIDS+=($!)
   wait_for "voice" "http://localhost:8100/health" logs/voice.log 40 || \
     echo "      ${DIM}continuing without voice — text and demo modes still work${OFF}"

@@ -3,14 +3,14 @@ import { useState } from "react";
 import { MEDICAL_CARDIAC_SCENARIO } from "../mock/scenario.ts";
 import { useController } from "../hooks/useDemoController.ts";
 import { transport } from "../lib/client.ts";
-import { selectFocus, useAuraStore } from "../store/useAuraStore.ts";
+import { selectFocus, useEchoStore } from "../store/useEchoStore.ts";
 import { Chip, Kbd } from "./ui.tsx";
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
     <button type="button" onClick={() => onChange(!value)} className="flex items-center gap-2 group">
-      <span className={`w-7 h-4 rounded-full border transition-colors relative ${value ? "bg-aura/30 border-aura/70" : "bg-white/5 border-white/20"}`}>
-        <span className={`absolute top-[2px] w-[10px] h-[10px] rounded-full transition-all ${value ? "left-[14px] bg-aura" : "left-[2px] bg-white/40"}`} />
+      <span className={`w-7 h-4 rounded-full border transition-colors relative ${value ? "bg-echo/30 border-echo/70" : "bg-white/5 border-white/20"}`}>
+        <span className={`absolute top-[2px] w-[10px] h-[10px] rounded-full transition-all ${value ? "left-[14px] bg-echo" : "left-[2px] bg-white/40"}`} />
       </span>
       <span className="mono text-[10.5px] text-white/70 group-hover:text-white">{label}</span>
     </button>
@@ -19,12 +19,12 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
 
 export function PresenterConsole() {
   const controller = useController();
-  const open = useAuraStore((s) => s.ui.consoleOpen);
-  const ui = useAuraStore((s) => s.ui);
-  const settings = useAuraStore((s) => s.settings);
-  const update = useAuraStore((s) => s.updateSettings);
-  const setUi = useAuraStore((s) => s.setUi);
-  const demo = useAuraStore((s) => selectFocus(s)?.state && s.ui.demoSessionId ? s.sessions[s.ui.demoSessionId]?.transcript.filter((t) => t.speaker === "caller").length ?? 0 : 0);
+  const open = useEchoStore((s) => s.ui.consoleOpen);
+  const ui = useEchoStore((s) => s.ui);
+  const settings = useEchoStore((s) => s.settings);
+  const update = useEchoStore((s) => s.updateSettings);
+  const setUi = useEchoStore((s) => s.setUi);
+  const demo = useEchoStore((s) => selectFocus(s)?.state && s.ui.demoSessionId ? s.sessions[s.ui.demoSessionId]?.transcript.filter((t) => t.speaker === "caller").length ?? 0 : 0);
   const [text, setText] = useState("");
   const scenario = MEDICAL_CARDIAC_SCENARIO;
 
@@ -89,7 +89,7 @@ export function PresenterConsole() {
                       type="button"
                       disabled={ui.demoStarted}
                       onClick={() => update({ mode: m })}
-                      className={`flex-1 mono text-[10.5px] py-1.5 uppercase tracking-widest ${settings.mode === m ? "bg-aura/20 text-aura" : "text-white/50 hover:text-white"}`}
+                      className={`flex-1 mono text-[10.5px] py-1.5 uppercase tracking-widest ${settings.mode === m ? "bg-echo/20 text-echo" : "text-white/50 hover:text-white"}`}
                     >
                       {m}
                     </button>
@@ -112,7 +112,7 @@ export function PresenterConsole() {
             </div>
 
             <div className="flex items-center gap-4 flex-wrap">
-              <Toggle label="AURA voice" value={settings.ttsAura} onChange={(v) => update({ ttsAura: v })} />
+              <Toggle label="ECHO voice" value={settings.ttsEcho} onChange={(v) => update({ ttsEcho: v })} />
               <Toggle label="caller voice" value={settings.ttsCaller} onChange={(v) => update({ ttsCaller: v })} />
               <Toggle label="sfx" value={settings.sfx} onChange={(v) => update({ sfx: v })} />
               <Toggle label="camera follow" value={settings.follow} onChange={(v) => update({ follow: v })} />
@@ -143,7 +143,7 @@ export function PresenterConsole() {
                     key={turn.utterance}
                     type="button"
                     onClick={() => void send(turn.utterance)}
-                    className="text-left rounded-md border border-white/[0.08] hover:border-aura/50 hover:bg-aura/[0.06] px-2 py-1.5"
+                    className="text-left rounded-md border border-white/[0.08] hover:border-echo/50 hover:bg-echo/[0.06] px-2 py-1.5"
                     title={turn.note}
                   >
                     <div className="flex items-center gap-2">

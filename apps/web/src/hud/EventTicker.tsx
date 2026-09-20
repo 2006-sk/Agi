@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useNow } from "../hooks/useNow.ts";
-import { useAuraStore } from "../store/useAuraStore.ts";
+import { useEchoStore } from "../store/useEchoStore.ts";
 
 const VISIBLE_MS = 4200;
 
@@ -20,7 +20,7 @@ const TONE: Record<string, string> = {
 /** Raw event stream for judges: the last few envelope types as they arrive. */
 export function EventTicker() {
   const now = useNow(400);
-  const ticker = useAuraStore((s) => s.ticker);
+  const ticker = useEchoStore((s) => s.ticker);
   const recent = ticker.filter((t) => now - t.at < VISIBLE_MS && t.type !== "transcript.partial").slice(-6);
   return (
     <div className="absolute right-3 top-2 flex flex-col items-end gap-1 pointer-events-none">

@@ -10,7 +10,7 @@ import { PresenterConsole } from "./hud/PresenterConsole.tsx";
 import { Standby } from "./hud/Standby.tsx";
 import { transport } from "./lib/client.ts";
 import { CityCanvas } from "./scene/CityCanvas.tsx";
-import { useAuraStore } from "./store/useAuraStore.ts";
+import { useEchoStore } from "./store/useEchoStore.ts";
 
 export default function App() {
   const controller = useDemoController();
@@ -20,7 +20,7 @@ export default function App() {
   useKeyboard(controller);
 
   useEffect(() => {
-    const store = useAuraStore.getState();
+    const store = useEchoStore.getState();
     return transport.connect(store.applyEvents, store.setConnection);
   }, []);
 

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
-import { CANON_EVENT } from "@aura/contracts";
+import { CANON_EVENT } from "@echo/contracts";
 import type { GatewayConfig } from "../config.js";
 import {
   GradiumSttSession,
@@ -21,7 +21,7 @@ export interface VapiDeps {
 }
 
 /**
- * Vapi bridge — a real phone call into AURA, with AURA doing all the work.
+ * Vapi bridge — a real phone call into ECHO, with ECHO doing all the work.
  *
  * Vapi is the phone line and nothing else. Every part that thinks or speaks is
  * ours:
@@ -78,7 +78,7 @@ function completionBody(content: string, model: string) {
  *
  * Vapi starts synthesising on the first chunk, so the line goes out word by
  * word rather than whole — it measurably shortens the silence between the
- * caller finishing and AURA starting to speak.
+ * caller finishing and ECHO starting to speak.
  */
 function streamCompletion(reply: FastifyReply, content: string, model: string): void {
   const id = `chatcmpl-${randomUUID()}`;
@@ -108,7 +108,7 @@ function streamCompletion(reply: FastifyReply, content: string, model: string): 
 
 export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<void> {
   const { store, orchestrator, intelligence, config } = deps;
-  const MODEL = "aura-protocol";
+  const MODEL = "echo-protocol";
 
   function authorized(request: FastifyRequest): boolean {
     if (!config.vapiSecret) return true;
@@ -201,7 +201,7 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
         return;
       }
 
-      // Channel 0 is the caller; channel 1 is AURA. Transcribing our own voice
+      // Channel 0 is the caller; channel 1 is ECHO. Transcribing our own voice
       // would put the agent's words in the caller's mouth.
       stt?.push(channels > 1 ? extractChannel(data, 0, channels) : data);
     });
@@ -353,12 +353,12 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
     if (type === "transcript") {
       const session = store.get(sessionId);
       if (!session) return reply.send({ ok: true });
-      const role = message.role === "assistant" ? "aura" : "caller";
+      const role = message.role === "assistant" ? "echo" : "caller";
       const text = String(message.transcript ?? "").trim();
       const isPartial = String(message.transcriptType ?? "partial") !== "final";
       // Caller finals arrive through the completions endpoint; taking them here
       // too would put the same sentence on the deck twice.
-      if (text && (isPartial || role === "aura")) {
+      if (text && (isPartial || role === "echo")) {
         orchestrator.publishRaw(session, {
           type: isPartial ? CANON_EVENT.TranscriptPartial : CANON_EVENT.TranscriptFinal,
           payload: { speaker: role, text, confidence: 0.9, language: "en" },
@@ -371,8 +371,8 @@ export async function vapiRoutes(app: FastifyInstance, deps: VapiDeps): Promise<
       const session = store.get(sessionId);
       if (session) {
         const speaking = message.status === "started";
-        const role = message.role === "assistant" ? "aura" : "caller";
-        if (role === "aura") session.agentSpeaking = speaking;
+        const role = message.role === "assistant" ? "echo" : "caller";
+        if (role === "echo") session.agentSpeaking = speaking;
         orchestrator.publishRaw(session, {
           type: CANON_EVENT.AudioLevel,
           payload: { level: speaking ? 0.6 : 0.05, speaker: role },

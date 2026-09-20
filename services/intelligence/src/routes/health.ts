@@ -13,7 +13,7 @@ export async function healthRoutes(app: FastifyInstance, options: HealthRouteOpt
     const query = request.query as { probe?: string };
     const body: Record<string, unknown> = {
       ok: true,
-      service: "aura-intelligence",
+      service: "echo-intelligence",
       model: options.config.model,
       model_client: options.model.kind,
       base_url: options.config.baseUrl,
