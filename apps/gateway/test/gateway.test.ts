@@ -202,14 +202,30 @@ describe("websocket delivery", () => {
     b.close();
   });
 
-  it("opens a session for a deck that connects before any call exists", async () => {
+  it("opens the pinned demo session before any call exists", async () => {
+    // The console may legitimately open this one early rather than race the
+    // operator; `baseConfig.vapiSessionId` is that id.
     const port = Number(new URL(baseUrl).port);
-    const client = collect(port, "fresh-session");
+    const client = collect(port, baseConfig.vapiSessionId);
     await client.open;
     await client.settle();
     expect(client.received[0]?.type).toBe("session.started");
     client.close();
   });
+
+  it("refuses a socket for a session that does not exist", async () => {
+    // A stale browser tab retrying an id from a previous run must not be able
+    // to resurrect it as a phantom incident on the dashboard.
+    const port = Number(new URL(baseUrl).port);
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/calls/ghost-from-a-past-run`);
+    const code = await new Promise<number>((resolve) => {
+      socket.on("close", (c) => resolve(c));
+      socket.on("error", () => resolve(-1));
+    });
+    expect(code).toBe(4404);
+    expect(gateway.store.has("ghost-from-a-past-run")).toBe(false);
+  });
+
 });
 
 describe("human approval gate", () => {

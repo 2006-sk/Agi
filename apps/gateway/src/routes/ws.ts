@@ -9,6 +9,8 @@ export interface WsDeps {
   store: SessionStore;
   hub: EventHub;
   orchestrator: Orchestrator;
+  /** The one id a console may open before any call exists. */
+  demoSessionId?: string;
 }
 
 /** What the deck sends back up the socket when an operator decides. */
@@ -24,7 +26,7 @@ const OperatorFrame = z.object({
 });
 
 export async function wsRoutes(app: FastifyInstance, deps: WsDeps): Promise<void> {
-  const { store, hub, orchestrator } = deps;
+  const { store, hub, orchestrator, demoSessionId } = deps;
 
   /**
    * The one socket the frontend opens.
@@ -37,12 +39,22 @@ export async function wsRoutes(app: FastifyInstance, deps: WsDeps): Promise<void
   app.get("/ws/calls/:session_id", { websocket: true }, (socket, request) => {
     const { session_id: sessionId } = request.params as { session_id: string };
 
-    // The deck connects before the demo starts, so the session is created here
-    // rather than refusing the socket and making the operator race the UI.
+    // Opening a socket must not conjure a call. A stale browser tab retrying a
+    // session id from a previous run would otherwise resurrect it, and the
+    // dashboard would show a phantom incident nobody is on.
+    //
+    // The one exception is the pinned demo session: the console may legitimately
+    // open that before any call exists, rather than racing the operator.
     let session = store.get(sessionId);
     if (!session) {
-      session = store.create({ session_id: sessionId });
-      orchestrator.openCall(session);
+      if (demoSessionId && sessionId === demoSessionId) {
+        session = store.create({ session_id: sessionId });
+        orchestrator.openCall(session);
+      } else {
+        request.log.info({ session_id: sessionId }, "refused socket for unknown session");
+        socket.close(4404, "unknown_session");
+        return;
+      }
     }
 
     hub.join(sessionId, socket);

@@ -84,7 +84,7 @@ export async function buildGateway(options: BuildOptions = {}): Promise<EchoGate
   await app.register(async (scope) => healthRoutes(scope, { store, hub, intelligence, voice }));
   await app.register(async (scope) => callRoutes(scope, { store, orchestrator, demoSessionId: config.vapiSessionId }));
   await app.register(async (scope) => voiceEventRoutes(scope, { store, orchestrator }));
-  await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator }));
+  await app.register(async (scope) => wsRoutes(scope, { store, hub, orchestrator, demoSessionId: config.vapiSessionId }));
   await app.register(consoleRoutes);
   await app.register(async (scope) => twilioRoutes(scope, { store, orchestrator, config }));
   await app.register(async (scope) => vapiRoutes(scope, { store, orchestrator, intelligence, config }));
