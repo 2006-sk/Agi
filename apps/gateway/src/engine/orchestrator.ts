@@ -136,11 +136,12 @@ export class Orchestrator {
       ...event,
       payload: toConsolePayload(event.type, event.payload ?? {}, {
         createdAt: session.created_at,
-        turnId: session.latestTurn ?? "turn_0",
+        turnId: this.utteranceId(session, event.type, event.payload ?? {}),
         now: this.now().toISOString(),
       }),
     };
     const sealed = this.store.append(session, shaped);
+    this.closeUtterance(session, sealed.type, sealed.payload);
     this.hub.broadcast(session.session_id, sealed);
     const out: EchoEvent[] = [sealed];
 
@@ -165,6 +166,52 @@ export class Orchestrator {
       out.push(sealedDerived);
     }
     return out;
+  }
+
+  /** Which speaker a transcript-ish payload belongs to. */
+  private static speakerOf(payload: Record<string, unknown>): "caller" | "agent" {
+    const who = payload.speaker;
+    return who === "echo" || who === "agent" || who === "assistant" ? "agent" : "caller";
+  }
+
+  /**
+   * The id tying a phrase's partials to its final.
+   *
+   * The console keys transcript lines by this and ignores a repeat. In echo
+   * mode the turn is the natural unit and the protocol machine supplies it.
+   * In vapi mode the agent runs the call and no turn is ever opened, so every
+   * line would share one id — which the console reads as the same utterance
+   * over and over, showing a single line that never grows.
+   */
+  private utteranceId(
+    session: Session,
+    type: string,
+    payload: Record<string, unknown>,
+  ): string {
+    const supplied = payload.utterance_id;
+    if (typeof supplied === "string" && supplied) return supplied;
+
+    const spoken =
+      type === CANON_EVENT.TranscriptPartial ||
+      type === CANON_EVENT.TranscriptFinal ||
+      type === CANON_EVENT.AgentSpeaking ||
+      type === CANON_EVENT.AgentInterrupted;
+    if (!spoken) return session.latestTurn ?? "turn_0";
+
+    const speaker = Orchestrator.speakerOf(payload);
+    // When there is a turn, keep the caller's line tied to its analysis.
+    if (speaker === "caller" && session.latestTurn) return session.latestTurn;
+    return `${speaker}_${session.utteranceSeq[speaker]}`;
+  }
+
+  /** A final closes the phrase; the next one gets the next number. */
+  private closeUtterance(
+    session: Session,
+    type: string,
+    payload: Record<string, unknown>,
+  ): void {
+    if (type !== CANON_EVENT.TranscriptFinal) return;
+    session.utteranceSeq[Orchestrator.speakerOf(payload)] += 1;
   }
 
   /** Publish a producer event that arrived pre-enveloped (voice, intelligence). */

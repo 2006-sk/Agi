@@ -297,6 +297,51 @@ describe("the transcript", () => {
     expect(line?.payload.text).toBe("What is the address of the emergency?");
   });
 
+  it("keeps every line of a conversation, not just the first", async () => {
+    // The console keys transcript lines by utterance_id and ignores repeats.
+    // When every line shared one id the panel showed a single message that
+    // never grew, which is what a whole phone call looked like on screen.
+    const call = "manylines";
+    await agentTool(call, "update_incident", { category: "medical" });
+
+    const spoken = [
+      ["user", "someone is in my house"],
+      ["assistant", "What is the address?"],
+      ["user", "170 St Germain Avenue"],
+      ["assistant", "Is anyone hurt?"],
+      ["user", "he is not breathing"],
+    ] as const;
+    for (const [role, transcript] of spoken) {
+      await webhook({ type: "transcript", transcriptType: "partial", role, transcript: transcript.slice(0, 5), call: { id: call } });
+      await webhook({ type: "transcript", transcriptType: "final", role, transcript, call: { id: call } });
+    }
+
+    const finals = sessionOf(call)!.log.filter((e) => e.type === "transcript.final");
+    expect(finals).toHaveLength(spoken.length);
+
+    // Every line must be distinguishable, or the console collapses them.
+    const ids = finals.map((e) => e.payload.utterance_id);
+    expect(new Set(ids).size).toBe(spoken.length);
+    expect(finals.map((e) => e.payload.text)).toEqual(spoken.map(([, t]) => t));
+  });
+
+  it("ties a partial to the final that closes it", async () => {
+    const call = "pairing";
+    await agentTool(call, "update_incident", { category: "medical" });
+    await webhook({ type: "transcript", transcriptType: "partial", role: "user", transcript: "he is", call: { id: call } });
+    await webhook({ type: "transcript", transcriptType: "final", role: "user", transcript: "he is not breathing", call: { id: call } });
+    await webhook({ type: "transcript", transcriptType: "partial", role: "user", transcript: "at one", call: { id: call } });
+
+    const log = sessionOf(call)!.log;
+    const first = log.find((e) => e.type === "transcript.partial")!;
+    const final = log.find((e) => e.type === "transcript.final")!;
+    const second = log.filter((e) => e.type === "transcript.partial")[1]!;
+
+    // The partial and its final are one utterance; the next phrase is a new one.
+    expect(first.payload.utterance_id).toBe(final.payload.utterance_id);
+    expect(second.payload.utterance_id).not.toBe(final.payload.utterance_id);
+  });
+
   it("shows partials while the caller is still talking", async () => {
     const call = "partials";
     await agentTool(call, "update_incident", { category: "medical" });

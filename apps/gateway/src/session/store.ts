@@ -50,6 +50,15 @@ export interface Session {
    * genuinely changes. Resetting on every notice clears the board mid-call.
    */
   activeCallId: string | null;
+  /**
+   * Counter per speaker for naming utterances.
+   *
+   * The console keys transcript lines by `utterance_id` and ignores a repeat,
+   * so every spoken phrase needs its own id or the panel shows one line and
+   * never grows. Partials share the id of the phrase in flight; a final
+   * closes it and the next phrase gets the next number.
+   */
+  utteranceSeq: { caller: number; agent: number };
 }
 
 /** The frontend's call/incident ids are derived from the session id, not invented. */
@@ -119,6 +128,7 @@ export class SessionStore {
       dispatchTimer: null,
       demo: null,
       activeCallId: null,
+      utteranceSeq: { caller: 1, agent: 1 },
     };
     this.sessions.set(sessionId, session);
     return session;
