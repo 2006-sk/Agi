@@ -39,11 +39,21 @@ export class GatewayTransport implements Transport {
     this.closed = false;
     setTimeout(() => onStatus("open"), 0);
 
-    // Attach to whatever is already live, and keep watching for new calls.
-    // An inbound phone call creates a session with nobody touching the UI; if
-    // the console only subscribed to calls it created itself, the dashboard
-    // would sit blank while someone was talking to the agent.
-    void this.attachToLiveCalls();
+    // A reload is a fresh start. Between demo runs the board must not come
+    // back showing the last caller's emergency, and a half-finished call that
+    // was cut off mid-way should not linger on screen. `?keep=1` skips it when
+    // you deliberately want to reattach to a call in progress.
+    const keep =
+      typeof window !== "undefined" && new URLSearchParams(window.location.search).get("keep") === "1";
+
+    // Then attach to whatever is live, and keep watching for new calls. An
+    // inbound phone call creates a session with nobody touching the UI; if the
+    // console only subscribed to calls it created itself, the dashboard would
+    // sit blank while someone was talking to the agent.
+    void (async () => {
+      if (!keep) await this.reset().catch(() => undefined);
+      await this.attachToLiveCalls();
+    })();
     this.attachTimer = setInterval(() => void this.attachToLiveCalls(), 3000);
 
     return () => {
@@ -129,9 +139,12 @@ export class GatewayTransport implements Transport {
         setTimeout(() => this.flush(), 0);
       }
     };
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       this.sockets.delete(sessionId);
       if (this.closed) return;
+      // 4404: the gateway has no such session. Retrying would loop forever on
+      // an id that is never coming back — a stale one from a previous run.
+      if (event.code === 4404) return;
       this.onStatus?.("closed");
       setTimeout(() => this.subscribe(sessionId, lastSequence), 1500);
     };
